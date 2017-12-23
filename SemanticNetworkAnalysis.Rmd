@@ -1,0 +1,196 @@
+---
+title: "Semantic Networks"
+author: "Abhilasha Kumar"
+date: "December 14, 2017"
+output: html_document
+code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Semantic Networks Project: Reading the Data
+
+We are not going to read all the files into R. They are in the folder. At this point, I am plotting only descriptives of number of items for each path length. 
+
+## Kenett Network
+```{r}
+kenett = data.frame(PathLength = c(1,2,3,4,5,6,10,15,20, 25, 30, 35,40,
+                                   45,50,55,60), 
+                    WordPairs =c(29362, 87796, 159802, 247114, 349286, 440964, 
+                     659580, 798116, 778900,714168, 541684,
+                     502740, 311442, 190726, 140938, 39866, 76) )
+
+
+library(ggplot2)
+library(ggthemes)
+library(dplyr)
+require(scales)
+kenett %>% mutate(Path = factor(PathLength, levels = unique(PathLength),
+                          labels = c(1,2,3,4,5,6,10,15,20, 25, 30, 35,40,
+                                   45,50,55,60)))%>%
+ggplot(aes(x = Path, y = WordPairs)) +
+ geom_bar(stat = "identity", position = "dodge", 
+          width = 1, color = "gray4", fill = "seagreen")+
+    xlab("Path Length") + ylab ("Number of Word Pairs")+ 
+  ggtitle("Distribution of Word Pairs in Kenett network")+
+  scale_y_continuous(labels = comma)+
+theme_classic() +
+    theme(axis.text = element_text(face = "bold", size = rel(1.2)),
+          axis.title = element_text(face = "bold", size = rel(1.2)),
+          legend.title = element_text(face = "bold", size = rel(1.2)),
+          plot.title = element_text(face = "bold", size = rel(1.2), hjust = .5))
+```
+
+## Undirected Steyvers and Tenenbaum (2005) Network
+
+```{r}
+undirected_2005 = data.frame(PathLength = c(1,2,3,4,5,6,10,15,20), 
+                    WordPairs =c(110464, 3059056,17694010,4304976, 6800, 0,0,0,0))
+
+library(ggplot2)
+library(ggthemes)
+library(dplyr)
+require(scales)
+undirected_2005 %>% mutate(Path = factor(PathLength, levels = unique(PathLength),
+                          labels = c(1,2,3,4,5,6,10,15,20)))%>%
+ggplot(aes(x = Path, y = WordPairs)) +
+ geom_bar(stat = "identity", position = "dodge", 
+          width = 1, color = "gray4", fill = "seagreen")+
+    xlab("Path Length") + ylab ("Number of Word Pairs")+ 
+  ggtitle("Distribution of Word Pairs in \n Undirected Steyvers & Tenenbaum")+
+theme_classic() +
+    scale_y_continuous(labels = comma)+
+    theme(axis.text = element_text(face = "bold", size = rel(1.2)),
+          axis.title = element_text(face = "bold", size = rel(1.2)),
+          legend.title = element_text(face = "bold", size = rel(1.2)),
+          plot.title = element_text(face = "bold", size = rel(1.2), hjust = .5))
+```
+
+## Undirected Steyvers and Tenenbaum (2005) Network
+
+```{r}
+directed_2005 = data.frame(PathLength = c(1,2,3,4,5,6,10,15,20), 
+                    WordPairs =c(63616, 634572,4018286,10090612, 
+                                 7397671, 1836567,6,0,0))
+
+library(ggplot2)
+library(ggthemes)
+library(dplyr)
+require(scales)
+directed_2005 %>% mutate(Path = factor(PathLength, levels = unique(PathLength),
+                          labels = c(1,2,3,4,5,6,10,15,20)))%>%
+ggplot(aes(x = Path, y = WordPairs)) +
+ geom_bar(stat = "identity", position = "dodge", 
+          width = 1, color = "gray4", fill = "seagreen")+
+    xlab("Path Length") + ylab ("Number of Word Pairs")+ 
+  ggtitle("Distribution of Word Pairs in \n Directed Step Distance Network")+
+theme_classic() +
+    scale_y_continuous(labels = comma)+
+    theme(axis.text = element_text(face = "bold", size = rel(1.2)),
+          axis.title = element_text(face = "bold", size = rel(1.2)),
+          legend.title = element_text(face = "bold", size = rel(1.2)),
+          plot.title = element_text(face = "bold", size = rel(1.2), hjust = .5))
+```
+
+## Directed Log P Steyvers and Tenenbaum (2005) Network
+
+```{r}
+undirected_2005 = data.frame(PathLength = c(1,2,3,4,5,6,10,15,20, 25, 30, 35, 40), 
+                    WordPairs =c(1639, 3567, 7186,13722,24540, 51544,
+                                 259257,1371146,2176554, 879401, 137398, 18878,
+                                 1085))
+
+library(ggplot2)
+library(ggthemes)
+library(dplyr)
+require(scales)
+undirected_2005 %>% mutate(Path = factor(PathLength, levels = unique(PathLength),
+                          labels = c(1,2,3,4,5,6,10,15,20, 25, 30,35,40)))%>%
+ggplot(aes(x = Path, y = WordPairs)) +
+ geom_bar(stat = "identity", position = "dodge", 
+          width = 1, color = "gray4", fill = "seagreen")+
+    xlab("Path Length") + ylab ("Number of Word Pairs")+ 
+  ggtitle("Distribution of Word Pairs in \n Directed Log P network")+
+theme_classic() +
+    scale_y_continuous(labels = comma)+
+    theme(axis.text = element_text(face = "bold", size = rel(1.2)),
+          axis.title = element_text(face = "bold", size = rel(1.2)),
+          legend.title = element_text(face = "bold", size = rel(1.2)),
+          plot.title = element_text(face = "bold", size = rel(1.2), hjust = .5))
+```
+
+# Path Length Correlations
+
+## Sample 1
+
+```{r}
+kenett_1 = read.csv("kenett_random_1.csv", header = TRUE,sep = ",")
+undirected_1 = read.csv("undirected_random_1.csv", header = TRUE,sep = ",")
+directed_1 = read.csv("directed_random_1.csv", header = TRUE,sep = ",")
+directedlogp_1 = read.csv("directedlogp_random_1.csv", header = TRUE,sep = ",")
+
+sample_1 = Reduce(function(dtf1, dtf2) merge(dtf1, dtf2, 
+                  by = c("X", "Word1", "Word2"), all = TRUE), 
+                  list(kenett_1, undirected_1, directed_1, directedlogp_1))
+
+library(dplyr)
+sample_1 = sample_1 %>% filter(PathLengthKenett != "Inf" &
+                                 PathLengthUndirected != "Inf" &
+                                 PathLengthDirected != "Inf" &
+                                 PathLengthLogP != "Inf")
+
+Hmisc::rcorr(as.matrix(sample_1[,4:7]), type = "pearson")
+
+cor.test(sample_1$PathLengthKenett, sample_1$PathLengthUndirected)
+```
+
+### Plotting Correlations
+
+```{r}
+ggplot(sample_1, aes(x = PathLengthKenett, y = PathLengthUndirected)) +
+ geom_point(color = "black", size = 0.8) + 
+  geom_smooth(method = "lm", color = "purple")+
+    xlab("Kenett Path Length") + ylab ("Undirected Path Length")+ 
+  ggtitle("Kenett:Undirected (r = 0.04)")+
+theme_classic() +
+    theme(axis.text = element_text(face = "bold", size = rel(1.2)),
+          axis.title = element_text(face = "bold", size = rel(1.2)),
+          legend.title = element_text(face = "bold", size = rel(1.2)),
+          plot.title = element_text(face = "bold", size = rel(1.2), hjust = .5))
+```
+
+
+## Sample 2
+
+```{r}
+kenett_2 = read.csv("kenett_random_2.csv", header = TRUE,sep = ",")
+undirected_2 = read.csv("undirected_random_2.csv", header = TRUE,sep = ",")
+directed_2 = read.csv("directed_random_2.csv", header = TRUE,sep = ",")
+directedlogp_2 = read.csv("directedlogp_random_2.csv", header = TRUE,sep = ",")
+
+sample_2 = Reduce(function(dtf1, dtf2) merge(dtf1, dtf2, 
+                  by = c("X", "Word1", "Word2"), all = TRUE), 
+                  list(kenett_2, undirected_2, directed_2, directedlogp_2))
+
+library(dplyr)
+sample_2 = sample_2 %>% filter(PathLengthKenett != "Inf" &
+                                 PathLengthUndirected != "Inf" &
+                                 PathLengthDirected != "Inf" &
+                                 PathLengthLogP != "Inf")
+
+Hmisc::rcorr(as.matrix(sample_2[,4:7]), type = "pearson")
+#to generate random examples:
+# sample_2[c(1,25,50,70,300, 900, 235, 150, 111, 5),]
+```
+
+# ELP Data
+
+```{r, echo=FALSE}
+#k1 = read.csv("kenett_1.csv", header = TRUE, sep = ",")
+#x = unique(k1$Word1)
+#write.csv(x, "1_word1.csv")
+```
+
+
