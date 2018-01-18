@@ -188,9 +188,47 @@ Hmisc::rcorr(as.matrix(sample_2[,4:7]), type = "pearson")
 # ELP Data
 
 ```{r, echo=FALSE}
-#k1 = read.csv("kenett_1.csv", header = TRUE, sep = ",")
-#x = unique(k1$Word1)
-#write.csv(x, "1_word1.csv")
+k = read.csv("k_20_agg.csv", header = TRUE, sep = ",")
+
+k_1_1 = k %>% filter(k$Sample == 1)
+k_1_2 = k %>% filter(k$Sample == 2)
+k_1_3 = k %>% filter(k$Sample == 3)
+k_1_4 = k %>% filter(k$Sample == 4)
+k_1_5 = k %>% filter(k$Sample == 5)
+
+t.test(k_1_1$I_Zscore, k_1_2$I_Zscore)
+
+## actual sd in table
+k_mean = group_by(k, Sample) %>%
+  summarise_at(vars(MeanLength, Log_Freq_HAL, I_Zscore), mean)
+colnames(k_mean) = c("Sample", "MeanL", "MeanF", "MeanZ")
+
+k_sd = group_by(k, Sample) %>%
+  summarise_at(vars(MeanLength, Log_Freq_HAL, I_Zscore), sd)
+colnames(k_sd) = c("Sample", "sdL", "sdF", "sdZ")
+
+k_agg = merge(k_mean, k_sd, by = "Sample")
+k_agg
+
 ```
+
+# GEPHI
+
+```{r}
+k = read.csv("kenett_1.csv", header = TRUE, sep = ",")
+
+k_random = dplyr::sample_n(k,800, replace = FALSE)
+write.csv(k_random, file = "k_random.csv")
+
+rowslist = k_random$X
+
+undirected = read.csv("undirected2005_1.csv", header = TRUE, sep = ",")
+u_random = dplyr::sample_n(undirected,800, replace = FALSE)
+write.csv(u_random, file = "u_random.csv")
+
+k_u = merge(k, undirected, by = c ("Word1", "Word2"))
+
+```
+
 
 

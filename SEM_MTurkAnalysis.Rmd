@@ -1,0 +1,423 @@
+---
+title: "Semantic Networks Analysis"
+author: "Abhilasha Kumar"
+date: "January 16, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Reading the Data
+
+```{r}
+sem = read.csv("SEM_Pilot_Final.csv", header = TRUE, sep = ",")
+
+```
+## Related-Unrelated Decisions
+```{r}
+library(dplyr)
+
+sem_decision = group_by(sem, subject, pathlength, actual ) %>%
+  summarize(Trials = n())
+sem_decision_agg = group_by(sem_decision, pathlength, actual ) %>%
+  summarise_at(vars(Trials), mean)
+
+## MISSING CELLS IN sem_decision to be replaced by 0
+
+sem_decision[160,] = c("Abs", "5","p", 0)
+sem_decision[161,] = c("Abs", "15","p", 0)
+sem_decision[162,] = c("Abs", "20","p", 0)
+
+```
+
+### Plotting Proportions
+
+```{r}
+## proportions not correct
+sem_decision$Trials = as.numeric(as.character(sem_decision$Trials))
+sem_decision$proportion = sem_decision$Trials/40
+
+
+sem_decision_agg$proportion = sem_decision_agg$Trials/(40)
+
+sem_decision$pathlengthfac = ordered(as.factor(as.character(sem_decision$pathlength)), 
+                            levels = c("1", "2", "3", "4", "5", "6",
+                                       "10", "15", "20"))
+
+sem_decision_agg$pathlengthfac = ordered(as.factor(as.character(sem_decision_agg$pathlength)), 
+                            levels = c("1", "2", "3", "4", "5", "6",
+                                       "10", "15", "20"))
+
+library(ggplot2)
+library(ggthemes)
+
+sem_decision_agg %>% mutate(WordPair = factor(actual, 
+                                        levels = unique(actual),
+                    labels = c("Related", "Unrelated")))%>%
+  ggplot(aes(x = pathlengthfac, y = proportion, 
+                              fill = WordPair, group = WordPair))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.7, color= "black")+
+ #geom_errorbar(aes(ymin=Trials - ci, ymax=Trials + ci), 
+  #           width=.2, color = "gray26", 
+   #          position = position_dodge(0.7))+
+ theme_few()+
+ scale_fill_solarized()+
+    xlab("Path Length") + ylab("Proportion of Trials") + 
+  ggtitle("Relatedness Judgments")  +
+   theme(axis.text = element_text(size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+         plot.title = element_text(hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+```
+
+### Subject-Wise
+
+```{r}
+sem_decision$subject = as.factor(as.character(sem_decision$subject))
+
+sem_decision$Subject = factor(sem_decision$subject, levels = unique(sem_decision$subject), labels =  c("WithGap_S1", "Jessica (No Gap)", 
+                                    "No Gap_S1", "No Gap_S2", "No Gap_S3", 
+                          "No Gap_S4", "With Gap_S2", "Pete (No Gap)",
+                                            "With Gap_S3"))
+sem_decision = sem_decision[order(sem_decision$subject, 
+                                  sem_decision$pathlength, 
+                                  sem_decision$actual),]
+
+sem_decision %>% mutate(WordPair = factor(actual, 
+                                        levels = unique(actual),
+                    labels = c("Related", "Unrelated")))%>%
+  ggplot(aes(x = pathlengthfac, y = proportion, 
+                              fill = WordPair, group = WordPair))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.7, color= "black")+
+ #geom_errorbar(aes(ymin=Trials - ci, ymax=Trials + ci), 
+  #           width=.2, color = "gray26", 
+   #          position = position_dodge(0.7))+
+ theme_few()+
+ scale_fill_solarized()+
+  facet_wrap(~Subject)+
+    xlab("Path Length") + ylab("Proportion of Trials") + 
+  ggtitle("Relatedness Judgments")  +
+   theme(axis.text = element_text(size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+         plot.title = element_text(hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+```
+
+
+## Raw Reaction Time
+
+```{r}
+sem_rt = group_by(sem, subject, pathlength ) %>%
+  summarise_at(vars(rt), mean)
+
+sem_rt_agg = group_by(sem, pathlength ) %>%
+  summarise_at(vars(rt), mean)
+```
+
+### Plotting RTs
+
+```{r}
+
+sem_rt_agg$pathlengthfac = ordered(as.factor(as.character(sem_rt_agg$pathlength)),                             levels = c("1", "2", "3", "4", "5", "6",
+                                       "10", "15", "20"))
+
+library(ggplot2)
+library(ggthemes)
+
+sem_rt_agg %>% 
+  ggplot(aes(x = pathlength, y = rt))+
+  geom_point()+
+  geom_line(color = "red")+
+   #geom_errorbar(aes(ymin=Trials - ci, ymax=Trials + ci), 
+  #           width=.2, color = "gray26", 
+   #          position = position_dodge(0.7))+
+ theme_few()+
+  scale_x_continuous(breaks = c(1,2,3,4,5,6,10,15,20))+
+    xlab("Path Length") + ylab("Reaction Time") + 
+  ggtitle("RT for Relatedness Judgments")  +
+   theme(axis.text = element_text(size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+         plot.title = element_text(hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+```
+
+### Subject-Wise
+
+```{r}
+
+library(ggplot2)
+library(ggthemes)
+
+sem_rt$Subject = factor(sem_rt$subject, levels = unique(sem_rt$subject), labels =  c("WithGap_S1", "Jessica (No Gap)", 
+                                    "No Gap_S1", "No Gap_S2", "No Gap_S3", 
+                          "No Gap_S4", "With Gap_S2", "Pete (No Gap)",
+                                            "With Gap_S3"))
+sem_rt %>% 
+  ggplot(aes(x = pathlength, y = rt))+
+  geom_point()+
+  geom_line(color = "red")+
+   #geom_errorbar(aes(ymin=Trials - ci, ymax=Trials + ci), 
+  #           width=.2, color = "gray26", 
+   #          position = position_dodge(0.7))+
+ theme_few()+
+  scale_x_continuous(breaks = c(1,2,3,4,5,6,10,15,20))+
+    xlab("Path Length") + ylab("Reaction Time") + 
+  ggtitle("RT for Relatedness Judgments")  +
+  facet_wrap(~Subject)+
+   theme(axis.text = element_text(size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+         plot.title = element_text(hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+```
+
+## z-scored Reaction Time
+
+### Histogram of RT
+
+```{r}
+library(ggplot2)
+library(ggthemes)
+ggplot(sem, aes(x = rt))+
+geom_histogram(binwidth = 200, color = "gray4", fill = "goldenrod1")+
+    theme_few()+
+  #facet_wrap(~subject)+
+  xlab("Raw RT") + ylab("Count") + 
+  ggtitle("Raw RT Histogram for All Trials")
+```
+
+### First Trim
+
+```{r}
+library(dplyr)
+sem_firsttrim = sem %>% filter( rt > 250 & rt < 2000)
+ggplot(sem_firsttrim, aes(x = rt))+
+geom_histogram(binwidth = 50, color = "gray4", fill = "goldenrod1")+
+    theme_few()+
+  #facet_wrap(~subject)+
+  xlab("Raw RT") + ylab("Count") + 
+  ggtitle("Raw RT Histogram for Trials Above 250 ms and below 2000 ms")
+```
+
+### Raw RT aggregates After Trimming
+
+```{r}
+sem_rt_firsttrim = group_by(sem_firsttrim, subject, pathlength ) %>%
+  summarise_at(vars(rt), mean)
+
+sem_rt_agg_firsttrim = group_by(sem_firsttrim, pathlength ) %>%
+  summarise_at(vars(rt), mean)
+
+sem_rt_agg_firsttrim$pathlengthfac = ordered(as.factor(as.character(sem_rt_agg_firsttrim$pathlength)),                             levels = c("1", "2", "3", "4", "5", "6",
+                                       "10", "15", "20"))
+
+library(ggplot2)
+library(ggthemes)
+
+sem_rt_agg_firsttrim %>% 
+  ggplot(aes(x = pathlength, y = rt))+
+  geom_point()+
+  geom_line(color = "red")+
+   #geom_errorbar(aes(ymin=Trials - ci, ymax=Trials + ci), 
+  #           width=.2, color = "gray26", 
+   #          position = position_dodge(0.7))+
+ theme_few()+
+  scale_x_continuous(breaks = c(1,2,3,4,5,6,10,15,20))+
+    xlab("Path Length") + ylab("Reaction Time") + 
+  ggtitle("RT for Relatedness Judgments")  +
+   theme(axis.text = element_text(size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+         plot.title = element_text(hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+```
+
+### Subject Raw RT again
+
+
+```{r}
+
+library(ggplot2)
+library(ggthemes)
+
+sem_rt_firsttrim$Subject = factor(sem_rt_firsttrim$subject, levels = unique(sem_rt_firsttrim$subject), labels =  c("WithGap_S1", "Jessica (No Gap)", 
+                                    "No Gap_S1", "No Gap_S2", "No Gap_S3", 
+                          "No Gap_S4", "With Gap_S2", "Pete (No Gap)",
+                                            "With Gap_S3"))
+sem_rt_firsttrim %>% 
+  ggplot(aes(x = pathlength, y = rt))+
+  geom_point()+
+  geom_line(color = "red")+
+   #geom_errorbar(aes(ymin=Trials - ci, ymax=Trials + ci), 
+  #           width=.2, color = "gray26", 
+   #          position = position_dodge(0.7))+
+ theme_few()+
+  scale_x_continuous(breaks = c(1,2,3,4,5,6,10,15,20))+
+    xlab("Path Length") + ylab("Reaction Time") + 
+  ggtitle("RT for Relatedness Judgments")  +
+  facet_wrap(~Subject)+
+   theme(axis.text = element_text(size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+         plot.title = element_text(hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+```
+### Making the z-scores
+```{r}
+## aggregate per subject all IVs and DVs
+meanRT = group_by(sem_firsttrim, subject) %>%
+  summarise_at(vars(rt), mean)
+colnames(meanRT) = c("subject", "MeanRT")
+
+sdRT = group_by(sem_firsttrim, subject) %>%
+  summarise_at(vars(rt), sd)
+colnames(sdRT) = c("subject", "sdRT")
+
+RT_agg = merge(meanRT, sdRT, by = "subject")
+
+## merge aggregate info with long data
+sem_z = merge(sem_firsttrim, RT_agg, by = "subject", all.x = T)
+
+## person and grand-mean centered scores using original and aggregate
+library(dplyr)
+sem_z = sem_z %>% mutate(zRT = (rt - MeanRT)/sdRT)
+                 
+## checking: subject level means should be zero
+
+sub_pic = group_by(sem_z, subject) %>%
+  summarise_at(vars(zRT), mean)
+
+```
+### z-RT Distribution
+```{r}
+ggplot(sem_z, aes(x = zRT))+
+geom_histogram(binwidth = 0.5, color = "gray4", fill = "goldenrod1")+
+    theme_few()+
+  xlab("z RT") + ylab("Count") + 
+  ggtitle("z-RT Histogram for above 250 ms & <2s Trials")
+```
+
+### Trimming z-RT
+
+```{r}
+sem_z_trimmed = subset(sem_z, sem_z$zRT < 3 & sem_z$zRT > -3)
+
+ggplot(sem_z_trimmed, aes(x = zRT))+
+geom_histogram(binwidth = 0.25, color = "gray4", fill = "goldenrod1")+
+    theme_few()+
+  xlab("Raw RT") + ylab("Count") + 
+  ggtitle("Trimmed (3 SD) z-RT Histogram for above 250 ms & <2s Trials")
+```
+
+### Repeating z-scoring
+
+```{r}
+library(dplyr)
+
+## aggregate per subject all IVs and DVs
+meanRT_trim = group_by(sem_z_trimmed, subject) %>%
+  summarise_at(vars(rt), mean)
+colnames(meanRT_trim) = c("subject", "MeanRT_trim")
+
+sdRT_trim = group_by(sem_z_trimmed, subject) %>%
+  summarise_at(vars(rt), sd)
+colnames(sdRT_trim) = c("subject", "sdRT_trim")
+
+RT_agg_trim = merge(meanRT_trim, sdRT_trim, by = "subject")
+
+## merge aggregate info with long data
+new_sem_z = merge(sem_z_trimmed, RT_agg_trim, by = "subject", all.x = T)
+
+## person and grand-mean centered scores using original and aggregate
+library(dplyr)
+new_sem_z = new_sem_z %>% mutate(zRT_trim = (rt - MeanRT_trim)/sdRT_trim)
+                 
+## checking: subject level means should be zero
+
+sub_pic = group_by(new_sem_z, subject) %>%
+  summarise_at(vars(zRT_trim), mean)
+
+#write.csv(new_pic_z, file="final_pic_z.csv")
+```
+
+### Aggregating zRT
+```{r}
+z_sem_rt = group_by(new_sem_z, subject, pathlength ) %>%
+  summarise_at(vars(zRT_trim), mean)
+
+z_sem_rt_agg = group_by(new_sem_z, pathlength ) %>%
+  summarise_at(vars(zRT_trim), mean)
+```
+
+### Plotting RTs
+
+```{r}
+
+z_sem_rt_agg$pathlengthfac = ordered(as.factor(as.character(sem_rt_agg$pathlength)),                             levels = c("1", "2", "3", "4", "5", "6",
+                                       "10", "15", "20"))
+
+library(ggplot2)
+library(ggthemes)
+
+z_sem_rt_agg %>% 
+  ggplot(aes(x = pathlength, y = zRT_trim))+
+  geom_point()+
+  geom_line(color = "red")+
+   #geom_errorbar(aes(ymin=Trials - ci, ymax=Trials + ci), 
+  #           width=.2, color = "gray26", 
+   #          position = position_dodge(0.7))+
+ theme_few()+
+  scale_x_continuous(breaks = c(1,2,3,4,5,6,10,15,20))+
+    xlab("Path Length") + ylab("z-RT") + 
+  ggtitle("z-RT for Relatedness Judgments")  +
+   theme(axis.text = element_text(size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+         plot.title = element_text(hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+```
+
+### SUbject-Wise
+
+```{r}
+
+library(ggplot2)
+library(ggthemes)
+
+z_sem_rt$Subject = factor(z_sem_rt$subject, 
+                          levels = unique(z_sem_rt$subject), 
+                          labels =  c("WithGap_S1", "Jessica (No Gap)", 
+                                    "No Gap_S1", "No Gap_S2", "No Gap_S3", 
+                          "No Gap_S4", "With Gap_S2", "Pete (No Gap)",
+                                            "With Gap_S3"))
+
+z_sem_rt %>% 
+  ggplot(aes(x = pathlength, y = zRT_trim))+
+  geom_point(color = "black", size = 1)+
+  geom_line(color = "red", size = 1)+
+   #geom_errorbar(aes(ymin=Trials - ci, ymax=Trials + ci), 
+  #           width=.2, color = "gray26", 
+   #          position = position_dodge(0.7))+
+ theme_few()+
+  scale_x_continuous(breaks = c(1,2,3,4,5,6,10,15,20))+
+    xlab("Path Length") + ylab("z-RT") + 
+  ggtitle("z-RT for Relatedness Judgments")  +
+  facet_wrap(~Subject)+
+   theme(axis.text = element_text(size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+         plot.title = element_text(hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+```
+
+
+```
+
+
+
+
