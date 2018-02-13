@@ -2,21 +2,24 @@
 title: "Semantic Networks Analysis"
 author: "Abhilasha Kumar"
 date: "January 16, 2018"
-output: html_document
+output:
+  pdf_document: default
+  html_document:
+    code_folding: hide
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Reading the Data
+# Reading the Data
 
-```{r}
-sem = read.csv("SEM_Pilot_Final.csv", header = TRUE, sep = ",")
+```{r, echo=FALSE}
+sem = read.csv("NetworksProject_AllSubjects.csv", header = TRUE, sep = ",")
 
 ```
-## Related-Unrelated Decisions
-```{r}
+# Related-Unrelated Decisions
+```{r, echo=FALSE}
 library(dplyr)
 
 sem_decision = group_by(sem, subject, pathlength, actual ) %>%
@@ -24,34 +27,37 @@ sem_decision = group_by(sem, subject, pathlength, actual ) %>%
 sem_decision_agg = group_by(sem_decision, pathlength, actual ) %>%
   summarise_at(vars(Trials), mean)
 
-## MISSING CELLS IN sem_decision to be replaced by 0
+## 2 MISSING CELLS IN sem_decision & sem_decision_agg to be replaced by 0
 
-sem_decision[160,] = c("Abs", "5","p", 0)
-sem_decision[161,] = c("Abs", "15","p", 0)
-sem_decision[162,] = c("Abs", "20","p", 0)
+sem_decision[119,] = c("42406", 15, "k", 0)
+sem_decision[120,] = c("61558", 15, "k", 0)
+
+
 
 ```
 
 ### Plotting Proportions
 
-```{r}
-## proportions not correct
+```{r, echo=FALSE, fig.align='center'}
 sem_decision$Trials = as.numeric(as.character(sem_decision$Trials))
+sem_decision_agg$Trials = as.numeric(as.character(sem_decision_agg$Trials))
+
 sem_decision$proportion = sem_decision$Trials/40
 
 
 sem_decision_agg$proportion = sem_decision_agg$Trials/(40)
 
 sem_decision$pathlengthfac = ordered(as.factor(as.character(sem_decision$pathlength)), 
-                            levels = c("1", "2", "3", "4", "5", "6",
-                                       "10", "15", "20"))
+                            levels = c("1", "2", "3", "4", "6", "15"))
 
 sem_decision_agg$pathlengthfac = ordered(as.factor(as.character(sem_decision_agg$pathlength)), 
-                            levels = c("1", "2", "3", "4", "5", "6",
-                                       "10", "15", "20"))
+                            levels = c("1", "2", "3", "4", "6","15"))
 
 library(ggplot2)
 library(ggthemes)
+
+sem_decision_agg = sem_decision_agg[order(sem_decision_agg$pathlength,
+                                          sem_decision_agg$actual),]
 
 sem_decision_agg %>% mutate(WordPair = factor(actual, 
                                         levels = unique(actual),
@@ -75,13 +81,10 @@ sem_decision_agg %>% mutate(WordPair = factor(actual,
 
 ### Subject-Wise
 
-```{r}
+```{r, echo=FALSE}
 sem_decision$subject = as.factor(as.character(sem_decision$subject))
 
-sem_decision$Subject = factor(sem_decision$subject, levels = unique(sem_decision$subject), labels =  c("WithGap_S1", "Jessica (No Gap)", 
-                                    "No Gap_S1", "No Gap_S2", "No Gap_S3", 
-                          "No Gap_S4", "With Gap_S2", "Pete (No Gap)",
-                                            "With Gap_S3"))
+
 sem_decision = sem_decision[order(sem_decision$subject, 
                                   sem_decision$pathlength, 
                                   sem_decision$actual),]
@@ -97,7 +100,7 @@ sem_decision %>% mutate(WordPair = factor(actual,
    #          position = position_dodge(0.7))+
  theme_few()+
  scale_fill_solarized()+
-  facet_wrap(~Subject)+
+  facet_wrap(~subject)+
     xlab("Path Length") + ylab("Proportion of Trials") + 
   ggtitle("Relatedness Judgments")  +
    theme(axis.text = element_text(size = rel(1)),
@@ -108,9 +111,9 @@ sem_decision %>% mutate(WordPair = factor(actual,
 ```
 
 
-## Raw Reaction Time
+#Raw Reaction Time
 
-```{r}
+```{r, echo=FALSE}
 sem_rt = group_by(sem, subject, pathlength ) %>%
   summarise_at(vars(rt), mean)
 
@@ -120,10 +123,9 @@ sem_rt_agg = group_by(sem, pathlength ) %>%
 
 ### Plotting RTs
 
-```{r}
+```{r, echo=FALSE}
 
-sem_rt_agg$pathlengthfac = ordered(as.factor(as.character(sem_rt_agg$pathlength)),                             levels = c("1", "2", "3", "4", "5", "6",
-                                       "10", "15", "20"))
+sem_rt_agg$pathlengthfac = ordered(as.factor(as.character(sem_rt_agg$pathlength)),                             levels = c("1", "2", "3", "4",  "6", "15"))
 
 library(ggplot2)
 library(ggthemes)
@@ -148,15 +150,11 @@ sem_rt_agg %>%
 
 ### Subject-Wise
 
-```{r}
+```{r, echo=FALSE}
 
 library(ggplot2)
 library(ggthemes)
 
-sem_rt$Subject = factor(sem_rt$subject, levels = unique(sem_rt$subject), labels =  c("WithGap_S1", "Jessica (No Gap)", 
-                                    "No Gap_S1", "No Gap_S2", "No Gap_S3", 
-                          "No Gap_S4", "With Gap_S2", "Pete (No Gap)",
-                                            "With Gap_S3"))
 sem_rt %>% 
   ggplot(aes(x = pathlength, y = rt))+
   geom_point()+
@@ -168,7 +166,7 @@ sem_rt %>%
   scale_x_continuous(breaks = c(1,2,3,4,5,6,10,15,20))+
     xlab("Path Length") + ylab("Reaction Time") + 
   ggtitle("RT for Relatedness Judgments")  +
-  facet_wrap(~Subject)+
+  facet_wrap(~subject)+
    theme(axis.text = element_text(size = rel(1)),
           axis.title = element_text(face = "bold", size = rel(1)),
           legend.title = element_text(face = "bold", size = rel(1)),
@@ -176,11 +174,11 @@ sem_rt %>%
          strip.text.x = element_text(face = "bold", size = rel(1.4)))
 ```
 
-## z-scored Reaction Time
+# z-scored Reaction Time
 
-### Histogram of RT
+## Histogram of RT
 
-```{r}
+```{r, echo=FALSE}
 library(ggplot2)
 library(ggthemes)
 ggplot(sem, aes(x = rt))+
@@ -191,9 +189,9 @@ geom_histogram(binwidth = 200, color = "gray4", fill = "goldenrod1")+
   ggtitle("Raw RT Histogram for All Trials")
 ```
 
-### First Trim
+## First Trim
 
-```{r}
+```{r, echo=FALSE}
 library(dplyr)
 sem_firsttrim = sem %>% filter( rt > 250 & rt < 2000)
 ggplot(sem_firsttrim, aes(x = rt))+
@@ -204,17 +202,16 @@ geom_histogram(binwidth = 50, color = "gray4", fill = "goldenrod1")+
   ggtitle("Raw RT Histogram for Trials Above 250 ms and below 2000 ms")
 ```
 
-### Raw RT aggregates After Trimming
+## Raw RT aggregates After Trimming
 
-```{r}
+```{r, echo=FALSE}
 sem_rt_firsttrim = group_by(sem_firsttrim, subject, pathlength ) %>%
   summarise_at(vars(rt), mean)
 
 sem_rt_agg_firsttrim = group_by(sem_firsttrim, pathlength ) %>%
   summarise_at(vars(rt), mean)
 
-sem_rt_agg_firsttrim$pathlengthfac = ordered(as.factor(as.character(sem_rt_agg_firsttrim$pathlength)),                             levels = c("1", "2", "3", "4", "5", "6",
-                                       "10", "15", "20"))
+sem_rt_agg_firsttrim$pathlengthfac = ordered(as.factor(as.character(sem_rt_agg_firsttrim$pathlength)),                             levels = c("1", "2", "3", "4", "6", "15"))
 
 library(ggplot2)
 library(ggthemes)
@@ -237,18 +234,15 @@ sem_rt_agg_firsttrim %>%
          strip.text.x = element_text(face = "bold", size = rel(1.4)))
 ```
 
-### Subject Raw RT again
+## Subject Raw RT again
 
 
-```{r}
+```{r, echo=FALSE}
 
 library(ggplot2)
 library(ggthemes)
 
-sem_rt_firsttrim$Subject = factor(sem_rt_firsttrim$subject, levels = unique(sem_rt_firsttrim$subject), labels =  c("WithGap_S1", "Jessica (No Gap)", 
-                                    "No Gap_S1", "No Gap_S2", "No Gap_S3", 
-                          "No Gap_S4", "With Gap_S2", "Pete (No Gap)",
-                                            "With Gap_S3"))
+
 sem_rt_firsttrim %>% 
   ggplot(aes(x = pathlength, y = rt))+
   geom_point()+
@@ -260,15 +254,16 @@ sem_rt_firsttrim %>%
   scale_x_continuous(breaks = c(1,2,3,4,5,6,10,15,20))+
     xlab("Path Length") + ylab("Reaction Time") + 
   ggtitle("RT for Relatedness Judgments")  +
-  facet_wrap(~Subject)+
+  facet_wrap(~subject)+
    theme(axis.text = element_text(size = rel(1)),
           axis.title = element_text(face = "bold", size = rel(1)),
           legend.title = element_text(face = "bold", size = rel(1)),
          plot.title = element_text(hjust = .5),
          strip.text.x = element_text(face = "bold", size = rel(1.4)))
 ```
-### Making the z-scores
-```{r}
+
+## Making the z-scores
+```{r, echo=FALSE}
 ## aggregate per subject all IVs and DVs
 meanRT = group_by(sem_firsttrim, subject) %>%
   summarise_at(vars(rt), mean)
@@ -293,8 +288,8 @@ sub_pic = group_by(sem_z, subject) %>%
   summarise_at(vars(zRT), mean)
 
 ```
-### z-RT Distribution
-```{r}
+## z-RT Distribution
+```{r, echo=FALSE}
 ggplot(sem_z, aes(x = zRT))+
 geom_histogram(binwidth = 0.5, color = "gray4", fill = "goldenrod1")+
     theme_few()+
@@ -302,9 +297,9 @@ geom_histogram(binwidth = 0.5, color = "gray4", fill = "goldenrod1")+
   ggtitle("z-RT Histogram for above 250 ms & <2s Trials")
 ```
 
-### Trimming z-RT
+## Trimming z-RT
 
-```{r}
+```{r, echo=FALSE}
 sem_z_trimmed = subset(sem_z, sem_z$zRT < 3 & sem_z$zRT > -3)
 
 ggplot(sem_z_trimmed, aes(x = zRT))+
@@ -314,9 +309,9 @@ geom_histogram(binwidth = 0.25, color = "gray4", fill = "goldenrod1")+
   ggtitle("Trimmed (3 SD) z-RT Histogram for above 250 ms & <2s Trials")
 ```
 
-### Repeating z-scoring
+## Repeating z-scoring
 
-```{r}
+```{r, echo=FALSE}
 library(dplyr)
 
 ## aggregate per subject all IVs and DVs
@@ -345,8 +340,8 @@ sub_pic = group_by(new_sem_z, subject) %>%
 #write.csv(new_pic_z, file="final_pic_z.csv")
 ```
 
-### Aggregating zRT
-```{r}
+## Aggregating zRT
+```{r, echo=FALSE}
 z_sem_rt = group_by(new_sem_z, subject, pathlength ) %>%
   summarise_at(vars(zRT_trim), mean)
 
@@ -354,12 +349,11 @@ z_sem_rt_agg = group_by(new_sem_z, pathlength ) %>%
   summarise_at(vars(zRT_trim), mean)
 ```
 
-### Plotting RTs
+## Plotting RTs
 
-```{r}
+```{r, echo=FALSE}
 
-z_sem_rt_agg$pathlengthfac = ordered(as.factor(as.character(sem_rt_agg$pathlength)),                             levels = c("1", "2", "3", "4", "5", "6",
-                                       "10", "15", "20"))
+z_sem_rt_agg$pathlengthfac = ordered(as.factor(as.character(sem_rt_agg$pathlength)),                             levels = c("1", "2", "3", "4", "6", "15"))
 
 library(ggplot2)
 library(ggthemes)
@@ -382,19 +376,14 @@ z_sem_rt_agg %>%
          strip.text.x = element_text(face = "bold", size = rel(1.4)))
 ```
 
-### SUbject-Wise
+## Subject-Wise
 
-```{r}
+```{r, echo=FALSE}
 
 library(ggplot2)
 library(ggthemes)
 
-z_sem_rt$Subject = factor(z_sem_rt$subject, 
-                          levels = unique(z_sem_rt$subject), 
-                          labels =  c("WithGap_S1", "Jessica (No Gap)", 
-                                    "No Gap_S1", "No Gap_S2", "No Gap_S3", 
-                          "No Gap_S4", "With Gap_S2", "Pete (No Gap)",
-                                            "With Gap_S3"))
+
 
 z_sem_rt %>% 
   ggplot(aes(x = pathlength, y = zRT_trim))+
@@ -407,7 +396,7 @@ z_sem_rt %>%
   scale_x_continuous(breaks = c(1,2,3,4,5,6,10,15,20))+
     xlab("Path Length") + ylab("z-RT") + 
   ggtitle("z-RT for Relatedness Judgments")  +
-  facet_wrap(~Subject)+
+  facet_wrap(~subject)+
    theme(axis.text = element_text(size = rel(1)),
           axis.title = element_text(face = "bold", size = rel(1)),
           legend.title = element_text(face = "bold", size = rel(1)),
@@ -415,6 +404,20 @@ z_sem_rt %>%
          strip.text.x = element_text(face = "bold", size = rel(1.4)))
 ```
 
+# Regressions
+```{r, echo=FALSE}
+library(lme4)
+
+m0 = lmer(data = sem, rt ~ 1 + (1|subject))
+summary(m0)
+reghelper::ICC(m0)
+
+m1 = lmer(data = sem, rt ~ pathlength + (1|subject))
+summary(m1)
+
+m2 = lmer(data = sem, rt ~ pathlength + (pathlength|subject))
+summary(m2)
+```
 
 ```
 
