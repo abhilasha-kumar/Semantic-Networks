@@ -32,9 +32,8 @@ sem_decision_agg = group_by(sem_decision, pathlength, actual ) %>%
 sem_decision[119,] = c("42406", 15, "k", 0)
 sem_decision[120,] = c("61558", 15, "k", 0)
 
-
-
 ```
+
 
 ### Plotting Proportions
 
@@ -79,6 +78,7 @@ sem_decision_agg %>% mutate(WordPair = factor(actual,
          strip.text.x = element_text(face = "bold", size = rel(1.4)))
 ```
 
+
 ### Subject-Wise
 
 ```{r, echo=FALSE}
@@ -110,6 +110,14 @@ sem_decision %>% mutate(WordPair = factor(actual,
          strip.text.x = element_text(face = "bold", size = rel(1.4)))
 ```
 
+### ANOVA
+
+```{r}
+relunrel_aov = aov(data = sem_decision, proportion ~ pathlengthfac*actual + 
+                     Error(subject/(pathlengthfac*actual)))
+summary(relunrel_aov)
+```
+
 
 #Raw Reaction Time
 
@@ -119,6 +127,17 @@ sem_rt = group_by(sem, subject, pathlength ) %>%
 
 sem_rt_agg = group_by(sem, pathlength ) %>%
   summarise_at(vars(rt), mean)
+```
+
+### ANOVA
+
+```{r}
+sem_rt$pathlengthfac = ordered(as.factor(as.character(sem_rt$pathlength)), 
+                            levels = c("1", "2", "3", "4", "6", "15"))
+sem_rt$subject = as.factor(sem_rt$subject)
+rt_aov = aov(data = sem_rt, rt ~ pathlengthfac + 
+                     Error(subject/(pathlengthfac)))
+summary(rt_aov)
 ```
 
 ### Plotting RTs
@@ -131,14 +150,14 @@ library(ggplot2)
 library(ggthemes)
 
 sem_rt_agg %>% 
-  ggplot(aes(x = pathlength, y = rt))+
+  ggplot(aes(x = pathlengthfac, y = rt, group = 1))+
   geom_point()+
   geom_line(color = "red")+
    #geom_errorbar(aes(ymin=Trials - ci, ymax=Trials + ci), 
   #           width=.2, color = "gray26", 
    #          position = position_dodge(0.7))+
  theme_few()+
-  scale_x_continuous(breaks = c(1,2,3,4,5,6,10,15,20))+
+ # scale_x_continuous(breaks = c(1,2,3,4,5,6,10,15,20))+
     xlab("Path Length") + ylab("Reaction Time") + 
   ggtitle("RT for Relatedness Judgments")  +
    theme(axis.text = element_text(size = rel(1)),
@@ -156,17 +175,17 @@ library(ggplot2)
 library(ggthemes)
 
 sem_rt %>% 
-  ggplot(aes(x = pathlength, y = rt))+
+  ggplot(aes(x = pathlengthfac, y = rt, 
+             group = subject, color = subject))+
   geom_point()+
-  geom_line(color = "red")+
+  geom_line()+
    #geom_errorbar(aes(ymin=Trials - ci, ymax=Trials + ci), 
   #           width=.2, color = "gray26", 
    #          position = position_dodge(0.7))+
  theme_few()+
-  scale_x_continuous(breaks = c(1,2,3,4,5,6,10,15,20))+
+ # scale_x_continuous(breaks = c(1,2,3,4,6,15))+
     xlab("Path Length") + ylab("Reaction Time") + 
   ggtitle("RT for Relatedness Judgments")  +
-  facet_wrap(~subject)+
    theme(axis.text = element_text(size = rel(1)),
           axis.title = element_text(face = "bold", size = rel(1)),
           legend.title = element_text(face = "bold", size = rel(1)),
@@ -217,14 +236,14 @@ library(ggplot2)
 library(ggthemes)
 
 sem_rt_agg_firsttrim %>% 
-  ggplot(aes(x = pathlength, y = rt))+
+  ggplot(aes(x = pathlengthfac, y = rt, group = 1))+
   geom_point()+
   geom_line(color = "red")+
    #geom_errorbar(aes(ymin=Trials - ci, ymax=Trials + ci), 
   #           width=.2, color = "gray26", 
    #          position = position_dodge(0.7))+
  theme_few()+
-  scale_x_continuous(breaks = c(1,2,3,4,5,6,10,15,20))+
+  #scale_x_continuous(breaks = c(1,2,3,4,6,15))+
     xlab("Path Length") + ylab("Reaction Time") + 
   ggtitle("RT for Relatedness Judgments")  +
    theme(axis.text = element_text(size = rel(1)),
@@ -242,19 +261,22 @@ sem_rt_agg_firsttrim %>%
 library(ggplot2)
 library(ggthemes)
 
-
+sem_rt_firsttrim$pathlengthfac = ordered(as.factor(as.character(sem_rt_firsttrim$pathlength)), 
+                            levels = c("1", "2", "3", "4", "6", "15"))
+sem_rt_firsttrim$subject = as.factor(sem_rt_firsttrim$subject)
 sem_rt_firsttrim %>% 
-  ggplot(aes(x = pathlength, y = rt))+
+  ggplot(aes(x = pathlengthfac, y = rt,
+             group = subject, color = subject))+
   geom_point()+
-  geom_line(color = "red")+
+  geom_line()+
    #geom_errorbar(aes(ymin=Trials - ci, ymax=Trials + ci), 
   #           width=.2, color = "gray26", 
    #          position = position_dodge(0.7))+
  theme_few()+
-  scale_x_continuous(breaks = c(1,2,3,4,5,6,10,15,20))+
+#  scale_x_continuous(breaks = c(1,2,3,4,5,6,10,15,20))+
     xlab("Path Length") + ylab("Reaction Time") + 
   ggtitle("RT for Relatedness Judgments")  +
-  facet_wrap(~subject)+
+ # facet_wrap(~subject)+
    theme(axis.text = element_text(size = rel(1)),
           axis.title = element_text(face = "bold", size = rel(1)),
           legend.title = element_text(face = "bold", size = rel(1)),
@@ -349,6 +371,17 @@ z_sem_rt_agg = group_by(new_sem_z, pathlength ) %>%
   summarise_at(vars(zRT_trim), mean)
 ```
 
+## ANOVA
+```{r}
+z_sem_rt$pathlengthfac = ordered(as.factor(as.character(z_sem_rt$pathlength)), 
+                            levels = c("1", "2", "3", "4", "6", "15"))
+z_sem_rt$subject = as.factor(z_sem_rt$subject)
+
+z_rt_aov = aov(data = z_sem_rt, zRT_trim ~ pathlengthfac + 
+                     Error(subject/(pathlengthfac)))
+summary(z_rt_aov)
+```
+
 ## Plotting RTs
 
 ```{r, echo=FALSE}
@@ -359,14 +392,14 @@ library(ggplot2)
 library(ggthemes)
 
 z_sem_rt_agg %>% 
-  ggplot(aes(x = pathlength, y = zRT_trim))+
+  ggplot(aes(x = pathlengthfac, y = zRT_trim, group = 1))+
   geom_point()+
   geom_line(color = "red")+
    #geom_errorbar(aes(ymin=Trials - ci, ymax=Trials + ci), 
   #           width=.2, color = "gray26", 
    #          position = position_dodge(0.7))+
  theme_few()+
-  scale_x_continuous(breaks = c(1,2,3,4,5,6,10,15,20))+
+  #scale_x_continuous(breaks = c(1,2,3,4,5,6,10,15,20))+
     xlab("Path Length") + ylab("z-RT") + 
   ggtitle("z-RT for Relatedness Judgments")  +
    theme(axis.text = element_text(size = rel(1)),
@@ -383,20 +416,21 @@ z_sem_rt_agg %>%
 library(ggplot2)
 library(ggthemes)
 
-
+ 
 
 z_sem_rt %>% 
-  ggplot(aes(x = pathlength, y = zRT_trim))+
+  ggplot(aes(x = pathlengthfac, y = zRT_trim,
+             color = subject, group = subject))+
   geom_point(color = "black", size = 1)+
-  geom_line(color = "red", size = 1)+
+  geom_line()+
    #geom_errorbar(aes(ymin=Trials - ci, ymax=Trials + ci), 
   #           width=.2, color = "gray26", 
    #          position = position_dodge(0.7))+
  theme_few()+
-  scale_x_continuous(breaks = c(1,2,3,4,5,6,10,15,20))+
+ # scale_x_continuous(breaks = c(1,2,3,4,5,6,10,15,20))+
     xlab("Path Length") + ylab("z-RT") + 
   ggtitle("z-RT for Relatedness Judgments")  +
-  facet_wrap(~subject)+
+ # facet_wrap(~subject)+
    theme(axis.text = element_text(size = rel(1)),
           axis.title = element_text(face = "bold", size = rel(1)),
           legend.title = element_text(face = "bold", size = rel(1)),
@@ -407,15 +441,19 @@ z_sem_rt %>%
 # Regressions
 ```{r, echo=FALSE}
 library(lme4)
+sem$pathlengthfac = ordered(as.factor(as.character(sem$pathlength)), 
+                            levels = c("1", "2", "3", "4", "6","15"))
 
-m0 = lmer(data = sem, rt ~ 1 + (1|subject))
+m0 = lmer(data = sem, rt ~ 1 + (1|subject) + (1|trial_index))
 summary(m0)
 reghelper::ICC(m0)
 
-m1 = lmer(data = sem, rt ~ pathlength + (1|subject))
+contrasts(sem$pathlengthfac) = contr.treatment(6, base = 1)
+
+m1 = lmer(data = sem, rt ~ pathlengthfac + (1|subject) + (1|trial_index))
 summary(m1)
 
-m2 = lmer(data = sem, rt ~ pathlength + (pathlength|subject))
+m2 = lmer(data = sem, rt ~ pathlengthfac + (pathlengthfac|subject))
 summary(m2)
 ```
 
