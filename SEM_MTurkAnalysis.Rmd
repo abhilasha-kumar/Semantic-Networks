@@ -110,6 +110,35 @@ sem_decision %>% mutate(WordPair = factor(actual,
          strip.text.x = element_text(face = "bold", size = rel(1.4)))
 ```
 
+### Line Plot Subject-Wise
+
+```{r, echo=FALSE}
+sem_decision$subject = as.factor(as.character(sem_decision$subject))
+
+
+sem_decision = sem_decision[order(sem_decision$subject, 
+                                  sem_decision$pathlength, 
+                                  sem_decision$actual),]
+
+sem_decision %>% mutate(WordPair = factor(actual, 
+                                        levels = unique(actual),
+                    labels = c("Related", "Unrelated")))%>%
+  ggplot(aes(x = pathlengthfac, y = proportion,
+             color = WordPair, group=interaction(WordPair, subject))) + 
+  geom_point()+
+ geom_line() + 
+ theme_few()+
+ scale_fill_solarized()+
+ # facet_wrap(~subject)+
+    xlab("Path Length") + ylab("Proportion of Trials") + 
+  ggtitle("Relatedness Judgments")  +
+   theme(axis.text = element_text(size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+         plot.title = element_text(hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+```
+
 ### ANOVA
 
 ```{r}
