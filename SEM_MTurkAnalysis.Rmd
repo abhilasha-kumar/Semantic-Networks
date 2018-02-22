@@ -3,9 +3,9 @@ title: "Semantic Networks Analysis"
 author: "Abhilasha Kumar"
 date: "January 16, 2018"
 output:
+  pdf_document: default
   html_document:
     code_folding: hide
-  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -36,7 +36,6 @@ sem_decision$Trials = as.numeric(as.character(sem_decision$Trials))
 sem_decision_agg = group_by(sem_decision, pathlength, Type ) %>%
   summarise_at(vars(Trials), mean)
 
-## 2 MISSING CELLS IN sem_decision & sem_decision_agg to be replaced by 0
 
 
 
@@ -425,14 +424,16 @@ summary(z_rt_aov)
 
 z_sem_rt_agg$pathlengthfac = ordered(as.factor(as.character(sem_rt_agg$pathlength)),                             levels = c("1", "2", "3", "4", "6", "15"))
 
+z_sem_rt_agg$zRT_trim = as.numeric(z_sem_rt_agg$zRT_trim)
+
 library(ggplot2)
 library(ggthemes)
 
 z_sem_rt_agg %>% 
   ggplot(aes(x = pathlengthfac, y = zRT_trim, group = 1))+
   geom_point()+
-  geom_smooth(method = "loess")+
-#geom_line(color = "red")+
+#  geom_smooth(method = "loess")+
+geom_line(color = "red")+
    #geom_errorbar(aes(ymin=Trials - ci, ymax=Trials + ci), 
   #           width=.2, color = "gray26", 
    #          position = position_dodge(0.7))+
@@ -446,6 +447,29 @@ z_sem_rt_agg %>%
          plot.title = element_text(hjust = .5),
          strip.text.x = element_text(face = "bold", size = rel(1.4)))
 ```
+
+## Quadratic Trend
+
+```{r}
+z_sem_rt %>% 
+  ggplot(aes(x = pathlength, y = zRT_trim))+
+  geom_point(color = "black", size = 1)+
+  geom_smooth(method = "loess", color = "red")+
+   #geom_errorbar(aes(ymin=Trials - ci, ymax=Trials + ci), 
+  #           width=.2, color = "gray26", 
+   #          position = position_dodge(0.7))+
+ theme_few()+
+ # scale_x_continuous(breaks = c(1,2,3,4,5,6,10,15,20))+
+    xlab("Path Length") + ylab("z-RT") + 
+  ggtitle("z-RT for Relatedness Judgments")  +
+ # facet_wrap(~subject)+
+   theme(axis.text = element_text(size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+         plot.title = element_text(hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+```
+
 
 ## Subject-Wise
 
@@ -481,8 +505,11 @@ z_sem_rt %>%
 library(lme4)
 sem$pathlengthfac = ordered(as.factor(as.character(sem$pathlength)), 
                             levels = c("1", "2", "3", "4", "6","15"))
+
+new_sem_z$pathlengthfac = ordered(as.factor(as.character(new_sem_z$pathlength)), 
+                            levels = c("1", "2", "3", "4", "6","15"))
  
-m0 = lmer(data = sem, rt ~ 1 + (1|subject) + (1|trial_index))
+m0 = lmer(data = sem, rt ~ 1 + (1|subject) )
 summary(m0)
 reghelper::ICC(m0)
 
@@ -495,21 +522,39 @@ sem$undirected = as.double(as.character(sem$undirected))
 sem$directed = as.double(as.character(sem$directed))
 sem$logp = as.double(as.character(sem$logp))
 
-#m1 = lmer(data = sem, rt ~ pathlengthfac +
-           # (pathlengthfac|subject))
-#summary(m1)
+contrasts(new_sem_z$pathlengthfac) = contr.treatment(6, base = 2)
 
-#m2 = lmer(data = sem, rt ~ logp + (1|subject))
-#summary(m2)
+m1_fixed = lmer(data = new_sem_z, zRT_trim ~ pathlengthfac +
+           (1|subject))
+summary(m1_fixed)
+
+m1_random = lmer(data = sem, rt ~ pathlengthfac +
+           (pathlengthfac|subject))
+summary(m1_random)
+
+## Adding ELP covariates
+
+# elp_model = lmer(data = new_sem_z, zRT_trim ~ mean_len + mean_logf +
+#            (1|subject))
+# fit_from_elp = broom::augment(elp_model,new_sem_z)
+# 
+# contrasts(fit_from_elp$pathlengthfac) = contr.treatment(6, base = 2)
+# 
+# m1_fixed_elp = lmer(data = fit_from_elp, .resid ~ pathlengthfac +
+#            (1|subject))
+# summary(m1_fixed_elp)
+
 
 ## TESTING QUADRATIC TREND
-
-m3 = lmer(data = sem, rt ~ I((pathlength)^2) +
+m3_linear = lmer(data = new_sem_z, zRT_trim~ pathlength +
             (1|subject) )
-summary(m3)
+summary(m3_linear)
+m3_quad = lmer(data = new_sem_z, zRT_trim ~ pathlength + I((pathlength)^2) +
+            (1|subject) )
+summary(m3_quad)
 ```
 
-## Correlations
+
 
 
 ```
