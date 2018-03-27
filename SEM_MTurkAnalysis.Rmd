@@ -129,7 +129,7 @@ sem_decision_agg %>% mutate(WordPair = factor(Type,
  theme_few()+
  scale_fill_solarized()+
     xlab("Path Length") + ylab("Proportion of Trials") + 
-  ggtitle("Relatedness Judgments")  +
+  ggtitle("Subject-Level Relatedness Judgments")  +
    theme(axis.text = element_text(size = rel(1)),
           axis.title = element_text(face = "bold", size = rel(1)),
           legend.title = element_text(face = "bold", size = rel(1)),
@@ -205,6 +205,15 @@ sem_decision %>% mutate(WordPair = factor(Type,
 relunrel_aov = aov(data = sem_decision, proportion ~ pathlengthfac*Type + 
                      Error(subject/(pathlengthfac*Type)))
 summary(relunrel_aov)
+
+options(contrasts = c('contr.sum', 'contr.poly'))
+ library(lsmeans)
+ library(multcomp)
+ sem_lsm = lsmeans::lsmeans(relunrel_aov, c("pathlengthfac", "Type"))
+ prime_effect = cld(sem_lsm, alpha = 0.05, 
+                 adjust = "tukey", details = TRUE, by = "pathlengthfac")
+ library(knitr)
+kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05))
 ```
 
 
@@ -1343,13 +1352,16 @@ sub_pic = group_by(sem_z_1, subject) %>%
 # Item Diagnostics
 
 ```{r}
-item_mean = group_by(sem, pathlength, ItemNo) %>%
+item_mean = group_by(new_sem_z, pathlength, ItemNo) %>%
   summarise_at(vars(zRT_trim), mean)
 
 item_rel = group_by(sem, pathlength, ItemNo, Type) %>%
   summarise(Trials = n())
 
 item_rel_rt = group_by(sem, pathlength, ItemNo, Type) %>%
+  summarise_at(vars(rt), mean)
+
+item_rt_collapsed = group_by(sem, pathlength, ItemNo) %>%
   summarise_at(vars(rt), mean)
 
 item_rel_wide = tidyr::spread(item_rel, Type, Trials)
@@ -1526,29 +1538,11 @@ ggplot(p15, aes(x = Related,
 
 ```
 
-# Bigram
-
-```{r}
-bigram = read.csv("w2_.txt", header = TRUE, sep = "\t", 
-                  stringsAsFactors = FALSE)
-colnames(bigram) = c("f", "prime_word", "target_word")
-
-bigram$prime_word = paste(bigram$prime_word, "")
-bigram$target_word = paste(bigram$target_word, "")
-
-
-sem$prime_word = tolower(sem$prime_word)
-sem$target_word = tolower(sem$target_word)
-
-new_sem = dplyr::inner_join(sem, bigram, by = c("prime_word", 
-                                          "target_word"))
-
-newsem = newsem[order(newsem$ItemNo),]
-
-
-```
-
 # Item Level Analyses
+
+## Proportion of Subjects
+
+### Plot
 
 ```{r}
 ## we have item_rel_wide and item_rel_rt_wide with RTs and number of subjects
@@ -1563,19 +1557,24 @@ itemrt_agg = Rmisc::summarySE(item_rel_main,
                         measurevar = "rt",
                         groupvars = c("pathlength", "Type"))
 
+itemrt_agg_collapsed = Rmisc::summarySE(item_rt_collapsed, 
+                        measurevar = "rt",
+                        groupvars = c("pathlength"))
+
+item_rel_main$Proportion = item_rel_main$Trials/16
 
 
 item_agg = Rmisc::summarySE(item_rel_main, 
-                        measurevar = "Trials",
+                        measurevar = "Proportion",
                         groupvars = c("pathlength", "Type"))
 item_agg$pathlengthfac = ordered(as.factor(as.character(item_agg$pathlength)), 
                             levels = c("1", "2", "3", "4", "6", "15"))
 
 item_agg %>% 
-  ggplot(aes(x = pathlengthfac, y = Trials, group = Type, fill = Type))+
+  ggplot(aes(x = pathlengthfac, y = Proportion, group = Type, fill = Type))+
 #  geom_smooth(method = "loess")+
  geom_bar(stat = "identity", position = "dodge", width = 0.7, color= "black")+
-  geom_errorbar(aes(ymin=Trials - ci, ymax=Trials + ci), 
+  geom_errorbar(aes(ymin=Proportion - ci, ymax=Proportion + ci), 
              width=.05, color = "gray30", 
              position = position_dodge(0.8))+
  theme_few()+
@@ -1590,7 +1589,87 @@ item_agg %>%
          strip.text.x = element_text(face = "bold", size = rel(1.4)))
 ```
 
-## Raw RT Plot 
+### ANOVA
+
+```{r}
+
+## item_rel_wide has 1200 rows with 0s for items. convert that into wide.
+
+library(tidyr)
+item_prop_data = item_rel_wide %>%
+  gather(Type, Trials, Related:Unrelated)
+
+item_prop_data$Proportion = item_prop_data$Trials/16
+
+item_prop_data = item_prop_data[order(item_prop_data$ItemNo),]
+
+item_prop_data$pathlengthfac = ordered(as.factor(as.character(item_prop_data$pathlength)), 
+                            levels = c("1", "2", "3", "4", "6", "15"))
+library(lme4)
+itemrelunrel_aov = aov(data = item_prop_data, 
+                       Proportion ~ pathlengthfac*Type + 
+                     Error(ItemNo/(Type)))
+summary(itemrelunrel_aov)
+
+options(contrasts = c('contr.sum', 'contr.poly'))
+ library(lsmeans)
+ library(multcomp)
+ sem_lsm = lsmeans::lsmeans(itemrelunrel_aov, c("pathlengthfac", "Type"))
+ prime_effect = cld(sem_lsm, alpha = 0.05, 
+                 adjust = "tukey", details = TRUE, by = "pathlengthfac")
+ library(knitr)
+kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05))
+
+```
+
+
+## Raw RT Plot Collapsed
+
+```{r}
+itemrt_agg_collapsed$pathlengthfac = ordered(as.factor(as.character(itemrt_agg_collapsed$pathlength)), 
+                            levels = c("1", "2", "3", "4", "6", "15"))
+
+itemrt_agg_collapsed %>% 
+  ggplot(aes(x = pathlengthfac, y = rt, group = 1))+
+#  geom_smooth(method = "loess")+
+  geom_point()+
+geom_line(color = "red")+
+  geom_errorbar(aes(ymin=rt - ci, ymax=rt + ci), 
+             width=.05, color = "gray30", 
+             position = position_dodge(0))+
+ theme_few()+
+  #scale_x_continuous(breaks = c(1,2,3,4,5,6,10,15,20))+
+    xlab("Path Length") + ylab("Raw RT") + 
+  ggtitle("Item-Level Raw RTs for Relatedness Judgments")  +
+   theme(axis.text = element_text(size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+         plot.title = element_text(hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+```
+### RT ANOVA Collapsed
+
+```{r}
+item_rt_collapsed$pathlengthfac = ordered(as.factor(as.character(item_rt_collapsed$pathlength)), 
+                            levels = c("1", "2", "3", "4", "6", "15"))
+item_rt_collapsed$ItemNo = as.factor(item_rt_collapsed$ItemNo)
+
+item_rt_collapsed_aov = aov(data = item_rt_collapsed, 
+                            rt ~ pathlengthfac)
+summary(item_rt_collapsed_aov)
+
+options(contrasts = c('contr.sum', 'contr.poly'))
+ library(lsmeans)
+ library(multcomp)
+ sem_lsm = lsmeans::lsmeans(item_rt_collapsed_aov, c("pathlengthfac"))
+ prime_effect = cld(sem_lsm, alpha = 0.05, 
+                 adjust = "tukey", details = TRUE)
+ library(knitr)
+kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 1 ))
+
+```
+
+## Raw RT Plot Rel-Unrel
 
 ```{r}
 itemrt_agg$pathlengthfac = ordered(as.factor(as.character(itemrt_agg$pathlength)), 
@@ -1615,7 +1694,7 @@ geom_line()+
          strip.text.x = element_text(face = "bold", size = rel(1.4)))
 ```
 
-## ANOVA
+### RT ANOVA Rel-Unrel
 
 ```{r}
 item_rel_main$pathlengthfac = ordered(as.factor(as.character(item_rel_main$pathlength)), 
@@ -1634,7 +1713,7 @@ options(contrasts = c('contr.sum', 'contr.poly'))
  prime_effect = cld(sem_lsm, alpha = 0.05, 
                  adjust = "tukey", details = TRUE)
  library(knitr)
-kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value <.5))
+kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value <1))
 
 
 x = sjPlot::plot_model(item_rt_aov, type = "int")
@@ -1642,8 +1721,8 @@ x = sjPlot::plot_model(item_rt_aov, type = "int")
 x + geom_line()+
  theme_few()+
   #scale_x_continuous(breaks = c(1,2,3,4,5,6,10,15,20))+
-    xlab("Path Length") + ylab("z-RT") + 
-  ggtitle("z-RT for Relatedness Judgments")  +
+    xlab("Path Length") + ylab("Raw RT") + 
+  ggtitle("Raw RT for Relatedness Judgments")  +
    theme(axis.text = element_text(size = rel(1)),
           axis.title = element_text(face = "bold", size = rel(1)),
           legend.title = element_text(face = "bold", size = rel(1)),
@@ -1652,145 +1731,262 @@ x + geom_line()+
 
 ```
 
-# z-scoring Item RTs
+## zRT plot
 
-## Making the z-scores
-``` {r  }
-## aggregate per subject all IVs and DVs
-meanRT = group_by(sem_firsttrim, ItemNo) %>%
-  summarise_at(vars(rt), mean)
-colnames(meanRT) = c("ItemNo", "MeanRT")
+```{r}
+item_rel_rt = group_by(new_sem_z, pathlength, ItemNo, Type) %>%
+  summarise_at(vars(rt, zRT_trim), mean)
 
-sdRT = group_by(sem_firsttrim, ItemNo) %>%
-  summarise_at(vars(rt), sd)
-colnames(sdRT) = c("ItemNo", "sdRT")
-
-RT_agg = merge(meanRT, sdRT, by = "ItemNo")
-
-## merge aggregate info with long data
-itemsem_z = merge(sem_firsttrim, RT_agg, by = "ItemNo", all.x = T)
-
-## person and grand-mean centered scores using original and aggregate
-library(dplyr)
-itemsem_z = itemsem_z %>% mutate(zRT = (rt - MeanRT)/sdRT)
-                 
-## checking: subject level means should be zero
-
-item_pic = group_by(itemsem_z, ItemNo) %>%
-  summarise_at(vars(zRT), mean)
-
-```
-## z-RT Distribution
-``` {r  }
-ggplot(itemsem_z, aes(x = zRT))+
-geom_histogram(binwidth = 0.5, color = "gray4", fill = "goldenrod1")+
-    theme_few()+
-  xlab("z RT") + ylab("Count") + 
-  ggtitle("z-RT Histogram for above 250 ms & <2s Trials")
-```
-
-## Trimming z-RT
-
-``` {r  }
-itemsem_z_trimmed = subset(itemsem_z, itemsem_z$zRT < 3 & itemsem_z$zRT > -3)
-
-ggplot(itemsem_z_trimmed, aes(x = zRT))+
-geom_histogram(binwidth = 0.25, color = "gray4", fill = "goldenrod1")+
-    theme_few()+
-  xlab("Raw RT") + ylab("Count") + 
-  ggtitle("Trimmed (3 SD) z-RT Histogram for above 250 ms & <2s Trials")
-```
-
-## Repeating z-scoring
-
-``` {r  }
-library(dplyr)
-
-## aggregate per subject all IVs and DVs
-meanRT_trim = group_by(itemsem_z_trimmed, ItemNo) %>%
-  summarise_at(vars(rt), mean)
-colnames(meanRT_trim) = c("ItemNo", "MeanRT_trim")
-
-sdRT_trim = group_by(itemsem_z_trimmed, ItemNo) %>%
-  summarise_at(vars(rt), sd)
-colnames(sdRT_trim) = c("ItemNo", "sdRT_trim")
-
-RT_agg_trim = merge(meanRT_trim, sdRT_trim, by = "ItemNo")
-
-## merge aggregate info with long data
-itemnew_sem_z = merge(itemsem_z_trimmed, RT_agg_trim, by = "ItemNo", all.x = T)
-
-## person and grand-mean centered scores using original and aggregate
-library(dplyr)
-itemnew_sem_z = itemnew_sem_z %>% 
-  mutate(zRT_trim = (rt - MeanRT_trim)/sdRT_trim)
-                 
-## checking: item level means should be zero
-
-item_pic = group_by(itemnew_sem_z, ItemNo) %>%
-  summarise_at(vars(zRT_trim), mean)
-```
-
-## Aggregating zRT
-``` {r}
-itemz_sem_rt = group_by(itemnew_sem_z, ItemNo ) %>%
-  summarise_at(vars(zRT_trim), mean)
-
-itemz_sem_rt_rel = group_by(itemnew_sem_z, ItemNo, pathlength, Type ) %>%
-  summarise_at(vars(zRT_trim), mean)
-
-itemz_sem_rt_agg = group_by(itemnew_sem_z, pathlength ) %>%
-  summarise_at(vars(zRT_trim), mean)
-
-itemz_rmisc = Rmisc::summarySE(itemnew_sem_z, 
-                        measurevar = "zRT_trim",
-                        groupvars = c("pathlength"))
-
-itemz_sem_rt_rel_agg = group_by(itemnew_sem_z, pathlength, Type ) %>%
-  summarise_at(vars(zRT_trim), mean)
-
-itemz_sem_rt_rel_agg_rmisc = Rmisc::summarySE(itemnew_sem_z, 
+item_rel_rt_collapsed = Rmisc::summarySE(item_rel_rt, 
                         measurevar = "zRT_trim",
                         groupvars = c("pathlength", "Type"))
-```
 
-## ANOVA
-```{r}
-itemz_sem_rt$pathlengthfac = ordered(as.factor(as.character(itemz_sem_rt$pathlength)), 
+item_rel_rt_collapsed$pathlengthfac = ordered(as.factor(as.character(item_rel_rt_collapsed$pathlength)), 
                             levels = c("1", "2", "3", "4", "6", "15"))
-itemz_sem_rt$ItemNo = as.factor(itemz_sem_rt$ItemNo)
 
-```
-
-## Plotting RTs: collapsed 
-
-```{r}
-
-itemz_sem_rt_rel_agg_rmisc$pathlengthfac = ordered(as.factor(as.character(itemz_sem_rt_rel_agg_rmisc$pathlength)),                             levels = c("1", "2", "3", "4", "6", "15"))
-
-itemz_sem_rt_rel_agg_rmisc$zRT_trim = as.numeric(itemz_sem_rt_rel_agg_rmisc$zRT_trim)
-
-library(ggplot2)
-library(ggthemes)
-
-itemz_sem_rt_rel_agg_rmisc %>% 
+item_rel_rt_collapsed %>% 
   ggplot(aes(x = pathlengthfac, y = zRT_trim, group = Type, color = Type))+
-  geom_point()+
 #  geom_smooth(method = "loess")+
+  geom_point()+
 geom_line()+
-   geom_errorbar(aes(ymin=zRT_trim - ci, ymax=zRT_trim + ci), 
-             width=.05, color = "gray30", 
+  geom_errorbar(aes(ymin=zRT_trim - ci, ymax=zRT_trim + ci), 
+             width=.05, color  = "gray30", 
              position = position_dodge(0))+
  theme_few()+
   #scale_x_continuous(breaks = c(1,2,3,4,5,6,10,15,20))+
     xlab("Path Length") + ylab("z-RT") + 
-  ggtitle("z-RT for Relatedness Judgments")  +
+  ggtitle("Item-Level z-RTs for Relatedness Judgments")  +
+   theme(axis.text = element_text(size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+         plot.title = element_text(hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+
+```
+
+### zRT ANOVA Rel-Unrel
+
+```{r}
+item_rel_rt$pathlengthfac = ordered(as.factor(as.character(item_rel_rt$pathlength)), 
+                            levels = c("1", "2", "3", "4", "6", "15"))
+contrasts(item_rel_rt$pathlengthfac) = contr.treatment(6, base = 2)
+
+item_zrt_aov = lme4::lmer(data = item_rel_rt, zRT_trim ~ pathlengthfac*Type +
+                          (1|ItemNo))
+summary(item_zrt_aov)
+car::Anova(item_zrt_aov)
+
+options(contrasts = c('contr.sum', 'contr.poly'))
+ library(lsmeans)
+ library(multcomp)
+ sem_lsm = lsmeans::lsmeans(item_zrt_aov, c("pathlengthfac", "Type"))
+ prime_effect = cld(sem_lsm, alpha = 0.05, 
+                 adjust = "tukey", details = TRUE)
+ library(knitr)
+kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value <.08))
+
+x = sjPlot::plot_model(item_zrt_aov, type = "int")
+
+x + geom_line()+
+ theme_few()+
+  #scale_x_continuous(breaks = c(1,2,3,4,5,6,10,15,20))+
+    xlab("Path Length") + ylab("Raw RT") + 
+  ggtitle("Raw RT for Relatedness Judgments")  +
+   theme(axis.text = element_text(size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+         plot.title = element_text(hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+
+```
+
+
+# KENETT ANOVAs
+
+```{r}
+## for the RT analyses we need to include only related trials for path length 1, and unrelated trials for all 
+## other path lengths
+
+# removing trials below 250 ms
+
+sem_kenett = sem %>% filter(rt > 250)
+
+# removing for each participant, trials which were above or below 2.5 SD for each condition were also deleted from final data analysis.
+
+condition_means = group_by(sem, pathlength) %>%
+  summarise_at(vars(rt), mean)
+condition_sd = group_by(sem, pathlength) %>%
+  summarise_at(vars(rt), sd)
+
+condition_agg = merge(condition_means, condition_sd, by = "pathlength")
+colnames(condition_agg) = c("pathlength", "meanrt", "sdrt")
+condition_agg$MOE = 2.5*condition_agg$sdrt
+condition_agg$lower = condition_agg$meanrt - condition_agg$MOE
+condition_agg$upper = condition_agg$meanrt + condition_agg$MOE
+
+
+sem_kenett = merge(sem_kenett, condition_agg, by = "pathlength")
+sem_kenett = dplyr::arrange(sem_kenett, subject)
+
+sem_kenett = sem_kenett %>% filter(rt > lower)
+sem_kenett = sem_kenett %>% filter(rt < upper)
+
+
+## further looking at only "successful trials", i.e., related trials for pathlength 1, and unrelated for all others
+
+sem_kenett_final = sem_kenett %>% filter((pathlength == 1 & Type == "Related") | 
+                                           (pathlength == 2 & Type == "Unrelated") | 
+                                           (pathlength == 3 & Type == "Unrelated") | 
+                                           (pathlength == 4 & Type == "Unrelated") | 
+                                           (pathlength == 6 & Type == "Unrelated") | 
+                                           (pathlength == 15 & Type == "Unrelated") )
+```
+
+## Plotting Final Kenett: Overall
+
+```{r}
+sem_kenett_agg = Rmisc::summarySE(sem_kenett_final, 
+                        measurevar = "rt",
+                        groupvars = c("pathlength"))
+
+
+## Raw RT Plot Rel-Unrel
+sem_kenett_agg$pathlengthfac = ordered(as.factor(as.character(sem_kenett_agg$pathlength)), 
+                            levels = c("1", "2", "3", "4", "6", "15"))
+
+sem_kenett_agg %>% 
+  ggplot(aes(x = pathlengthfac, y = rt, group = 1))+
+#  geom_smooth(method = "loess")+
+  geom_point()+
+geom_line(color = "darkblue")+
+  geom_errorbar(aes(ymin=rt - ci, ymax=rt + ci), 
+             width=.05, color = "gray30", 
+             position = position_dodge(0))+
+ theme_few()+
+  #scale_x_continuous(breaks = c(1,2,3,4,5,6,10,15,20))+
+    xlab("Path Length") + ylab("Raw RT") + 
+  ggtitle("Kenett Raw RTs for Relatedness Judgments")  +
    theme(axis.text = element_text(size = rel(1)),
           axis.title = element_text(face = "bold", size = rel(1)),
           legend.title = element_text(face = "bold", size = rel(1)),
          plot.title = element_text(hjust = .5),
          strip.text.x = element_text(face = "bold", size = rel(1.4)))
 ```
+
+
+## Kenett Anovas
+
+```{r}
+
+sem_kenett_final$subject = as.factor(sem_kenett_final$subject)
+sem_kenett_subject = group_by(sem_kenett_final, subject, pathlength) %>%
+  summarize_at(vars(rt), mean)
+
+sem_kenett_item = group_by(sem_kenett_final, pathlength, ItemNo) %>%
+  summarise_at(vars(rt), mean)
+
+sem_kenett_subject$pathlengthfac = ordered(as.factor(as.character(sem_kenett_subject$pathlength)), 
+                            levels = c("1", "2", "3", "4", "6", "15"))
+sem_kenett_item$pathlengthfac = ordered(as.factor(as.character(sem_kenett_item$pathlength)), 
+                            levels = c("1", "2", "3", "4", "6", "15"))
+```
+### Subject Level Anova
+```{r}
+kenett_subject_aov = aov(data = sem_kenett_subject, rt ~ pathlengthfac + 
+                           Error(subject/pathlengthfac))
+summary(kenett_subject_aov)
+
+options(contrasts = c('contr.sum', 'contr.poly'))
+ library(lsmeans)
+ library(multcomp)
+ kenett_subject_lsm = lsmeans::lsmeans(kenett_subject_aov, c("pathlengthfac"))
+ sub_effect = cld(kenett_subject_lsm, alpha = 0.05, 
+                 adjust = "tukey", details = TRUE)
+ library(knitr)
+kable(subset(sub_effect$comparisons,prime_effect$comparisons$p.value < 0.1))
+```
+
+## Plotting Final Kenett: Subject
+
+```{r}
+sem_kenett_subject_agg = Rmisc::summarySE(sem_kenett_subject, 
+                        measurevar = "rt",
+                        groupvars = c("pathlength"))
+
+
+## Raw RT Plot Rel-Unrel
+sem_kenett_subject_agg$pathlengthfac = ordered(as.factor(as.character(sem_kenett_subject_agg$pathlength)), 
+                            levels = c("1", "2", "3", "4", "6", "15"))
+
+sem_kenett_subject_agg %>% 
+  ggplot(aes(x = pathlengthfac, y = rt, group = 1))+
+#  geom_smooth(method = "loess")+
+  geom_point()+
+geom_line(color = "darkblue")+
+  geom_errorbar(aes(ymin=rt - ci, ymax=rt + ci), 
+             width=.05, color = "gray30", 
+             position = position_dodge(0))+
+ theme_few()+
+  #scale_x_continuous(breaks = c(1,2,3,4,5,6,10,15,20))+
+    xlab("Path Length") + ylab("Raw RT") + 
+  ggtitle("Subject-Level Kenett Raw RTs for Relatedness Judgments")  +
+   theme(axis.text = element_text(size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+         plot.title = element_text(hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+```
+
+
+### Item Level Anova
+```{r}
+
+kenett_item_aov = aov(data = sem_kenett_item, rt ~ pathlengthfac)
+summary(kenett_item_aov)
+
+options(contrasts = c('contr.sum', 'contr.poly'))
+ library(lsmeans)
+ library(multcomp)
+ kenett_item_lsm = lsmeans::lsmeans(kenett_item_aov, c("pathlengthfac"))
+ item_effect = cld(kenett_item_lsm, alpha = 0.05, 
+                 adjust = "tukey", details = TRUE)
+ library(knitr)
+kable(subset(item_effect$comparisons,prime_effect$comparisons$p.value < 0.1))
+```
+
+## Plotting Final Kenett: item
+
+```{r}
+sem_kenett_item_agg = Rmisc::summarySE(sem_kenett_item, 
+                        measurevar = "rt",
+                        groupvars = c("pathlength"))
+
+
+## Raw RT Plot Rel-Unrel
+sem_kenett_item_agg$pathlengthfac = ordered(as.factor(as.character(sem_kenett_item_agg$pathlength)), 
+                            levels = c("1", "2", "3", "4", "6", "15"))
+
+sem_kenett_item_agg %>% 
+  ggplot(aes(x = pathlengthfac, y = rt, group = 1))+
+#  geom_smooth(method = "loess")+
+  geom_point()+
+geom_line(color = "darkblue")+
+  geom_errorbar(aes(ymin=rt - ci, ymax=rt + ci), 
+             width=.05, color = "gray30", 
+             position = position_dodge(0))+
+ theme_few()+
+  #scale_x_continuous(breaks = c(1,2,3,4,5,6,10,15,20))+
+    xlab("Path Length") + ylab("Raw RT") + 
+  ggtitle("item-Level Kenett Raw RTs for Relatedness Judgments")  +
+   theme(axis.text = element_text(size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+         plot.title = element_text(hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+```
+
+
+
 
 
 ```
