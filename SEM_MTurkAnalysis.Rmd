@@ -831,14 +831,118 @@ m1_fixed_elp = lmer(data = fit_from_elp, .resid ~ pathlengthfac +
             optCtrl=list(maxfun=1000000)))
  summary(m1_all_elp_random)
  
+ ## centering so that contrasts are easier
+final_sem$mean_len_c = scale(final_sem$mean_len, 
+                             center = TRUE, scale = FALSE)
+final_sem$mean_logf_c = scale(final_sem$mean_logf, 
+                              center = TRUE, scale = FALSE)
+final_sem$mean_ldtz_c = scale(final_sem$mean_ldtz, 
+                              center = TRUE, scale = FALSE)
+final_sem$mean_conc_c = scale(final_sem$mean_conc, 
+                              center = TRUE, scale = FALSE)
+
  m1_all_elp_type = lme4::lmer(data = final_sem, 
                               zRT_trim ~ pathlengthfac*Type +
-                     mean_len + mean_logf + mean_ldtz + mean_conc +
+                     mean_len_c + mean_logf_c + mean_ldtz_c + mean_conc_c +
            (1|subject) + (1|trial_index) +
               + (1|target_word))
  summary(m1_all_elp_type)
  
+ m1_all_elp_type_withoutcov = lme4::lmer(data = final_sem, 
+                              zRT_trim ~ pathlengthfac*Type +
+           (1|subject) + (1|trial_index) +
+              + (1|target_word))
+ summary(m1_all_elp_type_withoutcov)
+ 
 ```
+
+### Contrast Codes
+```{r}
+groups <- read.table('groups.csv',sep=',',header=TRUE,stringsAsFactors=FALSE)
+groups
+
+dummy_codes <- as.matrix(groups[,4:9])
+dummy_codes
+
+fixed_effects <- matrix(fixef(m1_all_elp_type_withoutcov))
+fixed_effects
+
+means_matrix <- matrix(rep(0,144),ncol=12,nrow=12)
+means_matrix[,1] <- 1
+means_matrix[,2:6] <- dummy_codes[,2:6]
+means_matrix[,7] <- dummy_codes[,1]
+means_matrix[,8:12] <- dummy_codes[,1]*dummy_codes[,2:6]
+means_matrix
+
+means <- means_matrix %*% fixed_effects
+print(cbind(means,groups[,2:3]))
+
+contrast_matrix <- matrix(c(
+  0,1,-1,0,0,0,0,0,0,0,0,0,
+  0,0,1,0,-1,0,0,0,0,0,0,0,
+  0,0,1,0,0,0,-1,0,0,0,0,0,
+  0,0,0,0,0,0,1,0,-1,0,0,0,
+  0,0,0,0,0,0,0,0,1,0,-1,0), nrow=5,ncol=12,byrow=TRUE)
+row.names(contrast_matrix) <- c("path 1, related vs. path 2, unrelated",
+                                "path 2, unrelated  vs. path 3, unrelated",
+                                "path 2, unrelated  vs. path 4, unrelated",
+                                "path 4, unrelated  vs. path 6, unrelated",
+                                "path 6, unrelated  vs. path 15, unrelated")
+
+matrix_for_glht <-contrast_matrix %*%  means_matrix
+matrix_for_glht
+glht_sem <- multcomp::glht(m1_all_elp_type_withoutcov, 
+                           linfct = matrix_for_glht, 
+              alternative = "two.sided", rhs = 0)
+summary(glht_sem)
+```
+
+### Contrast Codes with Covariates
+```{r}
+groups <- read.table('groups.csv',
+                     sep=',',header=TRUE,stringsAsFactors=FALSE)
+groups
+
+dummy_codes <- as.matrix(groups[,4:9])
+dummy_codes
+
+fixed_effects <- matrix(fixef(m1_all_elp_type))
+fixed_effects
+
+means_matrix <- matrix(rep(0,192),ncol=16,nrow=12)
+means_matrix[,1] <- 1
+means_matrix[,2:6] <- dummy_codes[,2:6]
+means_matrix[,7] <- dummy_codes[,1]
+means_matrix[,8:11] <- 0
+means_matrix[,12:16] <- dummy_codes[,1]*dummy_codes[,2:6]
+means_matrix
+
+means <- means_matrix %*% fixed_effects
+print(cbind(means,groups[,2:3]))
+
+contrast_matrix <- matrix(c(
+  0,1,-1,0,0,0,0,0,0,0,0,0,
+  0,0,1,0,-1,0,0,0,0,0,0,0,
+  0,0,1,0,0,0,-1,0,0,0,0,0,
+  0,0,0,0,0,0,1,0,-1,0,0,0,
+  0,0,0,0,0,0,0,0,1,0,-1,0), nrow=5,ncol=12,byrow=TRUE)
+row.names(contrast_matrix) <- c("path 1, related vs. path 2, unrelated",
+                                "path 2, unrelated  vs. path 3, unrelated",
+                                "path 2, unrelated  vs. path 4, unrelated",
+                                "path 4, unrelated  vs. path 6, unrelated",
+                                "path 6, unrelated  vs. path 15, unrelated")
+
+matrix_for_glht <-contrast_matrix %*%  means_matrix
+matrix_for_glht
+
+matrix_for_glht <-contrast_matrix %*%  means_matrix
+matrix_for_glht
+glht_sem <- multcomp::glht(m1_all_elp_type, 
+                           linfct = matrix_for_glht, 
+              alternative = "two.sided", rhs = 0)
+summary(glht_sem)
+```
+
 ### Plot
 ```{r}
 
@@ -1700,6 +1804,8 @@ geom_line()+
 item_rel_main$pathlengthfac = ordered(as.factor(as.character(item_rel_main$pathlength)), 
                             levels = c("1", "2", "3", "4", "6", "15"))
 contrasts(item_rel_main$pathlengthfac) = contr.treatment(6, base = 2)
+contrasts(item_rel_main$Type) = contr.treatment(2, base = 2)
+
 
 item_rt_aov = lme4::lmer(data = item_rel_main, rt ~ pathlengthfac*Type +
                           (1|ItemNo))
@@ -1770,6 +1876,7 @@ geom_line()+
 item_rel_rt$pathlengthfac = ordered(as.factor(as.character(item_rel_rt$pathlength)), 
                             levels = c("1", "2", "3", "4", "6", "15"))
 contrasts(item_rel_rt$pathlengthfac) = contr.treatment(6, base = 2)
+contrasts(item_rel_rt$Type) = contr.treatment(2, base = 2)
 
 item_zrt_aov = lme4::lmer(data = item_rel_rt, zRT_trim ~ pathlengthfac*Type +
                           (1|ItemNo))
@@ -1797,7 +1904,51 @@ x + geom_line()+
           legend.title = element_text(face = "bold", size = rel(1)),
          plot.title = element_text(hjust = .5),
          strip.text.x = element_text(face = "bold", size = rel(1.4)))
+```
+### GLHT Test
+```{r} 
+### GLHT combination test
 
+## testing 1,related diff from 2,unrelated
+## testing 2,unrelated diff from 3,unrelated
+## testing 6, unrelated diff from 15, unrelated
+groups <- read.table('groups.csv',sep=',',header=TRUE,stringsAsFactors=FALSE)
+groups
+
+dummy_codes <- as.matrix(groups[,4:9])
+dummy_codes
+
+fixed_effects <- matrix(fixef(item_zrt_aov))
+fixed_effects
+
+means_matrix <- matrix(rep(0,144),ncol=12,nrow=12)
+means_matrix[,1] <- 1
+means_matrix[,2:6] <- dummy_codes[,2:6]
+means_matrix[,7] <- dummy_codes[,1]
+means_matrix[,8:12] <- dummy_codes[,1]*dummy_codes[,2:6]
+means_matrix
+
+means <- means_matrix %*% fixed_effects
+print(cbind(means,groups[,2:3]))
+
+contrast_matrix <- matrix(c(
+  0,1,-1,0,0,0,0,0,0,0,0,0,
+  0,0,1,0,-1,0,0,0,0,0,0,0,
+  0,0,1,0,0,0,-1,0,0,0,0,0,
+  0,0,0,0,0,0,1,0,-1,0,0,0,
+  0,0,0,0,0,0,0,0,1,0,-1,0), nrow=5,ncol=12,byrow=TRUE)
+row.names(contrast_matrix) <- c("path 1, related vs. path 2, unrelated",
+                                "path 2, unrelated  vs. path 3, unrelated",
+                                "path 2, unrelated  vs. path 4, unrelated",
+                                "path 4, unrelated  vs. path 6, unrelated",
+                                "path 6, unrelated  vs. path 15, unrelated")
+
+matrix_for_glht <-contrast_matrix %*%  means_matrix
+matrix_for_glht
+glht_sem <- multcomp::glht(item_zrt_aov, 
+                           linfct = matrix_for_glht, 
+              alternative = "two.sided", rhs = 0)
+summary(glht_sem)
 ```
 
 
@@ -1985,6 +2136,81 @@ geom_line(color = "darkblue")+
          strip.text.x = element_text(face = "bold", size = rel(1.4)))
 ```
 
+
+# Word2vec Model
+
+```{r}
+word2vec = read.csv("word2veccosines.csv", header = TRUE, sep = ",")
+
+final_word2vec = merge(final_sem, word2vec, 
+                       by = c( "ItemNo", "proc"))
+final_word2vec = final_word2vec %>% arrange(subject, ItemNo)
+
+m1_word2vec = lme4::lmer(data = final_word2vec, 
+                              zRT_trim ~ word2veccosine*Type +
+                     mean_len + mean_logf + mean_ldtz + mean_conc +
+           (1|subject) + (1|trial_index) +
+              + (1|target_word))
+ summary(m1_word2vec)
+ 
+ m1_pathlength = lme4::lmer(data = final_word2vec, 
+                              zRT_trim ~ pathlengthfac*Type +
+                     mean_len + mean_logf + mean_ldtz + mean_conc +
+           (1|subject) + (1|trial_index) +
+              + (1|target_word))
+ summary(m1_pathlength)
+ 
+ anova(m1_pathlength,m1_word2vec)
+ 
+  m_undirected_type = lmer(data = final_word2vec, 
+                           zRT_trim~ undirectedfac*Type +
+                     mean_len + mean_logf + mean_ldtz + mean_conc +
+           (1|subject) + (1|trial_index) +
+              + (1|target_word))
+summary(m_undirected_type)
+ 
+ anova(m1_pathlength,m1_word2vec, m_undirected_type)
+```
+
+## ScatterPlot
+
+### Kenett and Word2Vec
+```{r}
+
+item_word2vec = group_by(final_word2vec, ItemNo) %>%
+  summarise_at(vars(pathlength,undirected, word2veccosine), mean)
+item_word2vec$pathlengthfac = ordered(as.factor(as.character(item_word2vec$pathlength)), 
+                            levels = c("1", "2", "3", "4", "6", "15"))
+ggplot(item_word2vec, 
+       aes(x = pathlength, y = word2veccosine))+
+geom_point()+
+  geom_smooth(method = "lm")+
+ theme_few()+
+    xlab("Path Length") + ylab("Cosine Similarity") + 
+  ggtitle("Correlation between Kenett Path Length & Word2Vec Cosines")  +
+   theme(axis.text = element_text(size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+         plot.title = element_text(hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+```
+
+### Kenett and Word2Vec
+```{r}
+
+ggplot(item_word2vec, 
+       aes(x = undirected, y = word2veccosine))+
+geom_point()+
+  geom_smooth(method = "lm")+
+ theme_few()+
+    xlab("Path Length") + ylab("Cosine Similarity") + 
+  ggtitle("Correlation between Non Directed & Word2Vec Cosines")  +
+   theme(axis.text = element_text(size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+         plot.title = element_text(hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+```
 
 
 
