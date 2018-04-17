@@ -574,6 +574,7 @@ final_sem$mean_conc_c = scale(final_sem$mean_conc,
            (1|subject) + (1|trial_index) +
               + (1|target_word))
  summary(m1_all_elp_type)
+ car::Anova(m1_all_elp_type)
  
  m1_all_elp_type_withoutcov = lme4::lmer(data = final_sem, 
                               zRT_trim ~ pathlengthfac*Type +
