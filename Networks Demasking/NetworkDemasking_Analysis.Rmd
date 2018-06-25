@@ -14,6 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ``` {r warning=F, message=F}
 library(dplyr)
 netdemask = read.csv("NetworksDemaskingAllSubjects.csv", header = TRUE, sep = ",")
+netdemask = netdemask %>% filter(PrimeAccuracy == "1" & TargetAccuracy == 1)
 ```
 
 #Raw Reaction Time
@@ -411,21 +412,46 @@ summary(RTprime_model)
 
 contrasts(new_netdemask_z$pathlengthfac) = contr.treatment(6, base = 3)
 RTprime_model_2 = lmer(data = new_netdemask_z, 
-                          zRTTarget_trim ~ zRTPrime_trim*pathlengthfac + 
+                          zRTTarget_trim ~ zRTPrime_trim + pathlengthfac + 
                             (1|subject) + (1|ItemNumber))
 summary(RTprime_model_2)
 car::Anova(RTprime_model_2)
 
-options(contrasts = c('contr.sum', 'contr.poly'))
- library(lsmeans)
- library(multcomp)
- demasking_lsm = lsmeans::lsmeans(RTprime_model_2, c("zRTPrime_trim",
-                                                  "pathlengthfac" ))
- prime_effect = cld(demasking_lsm, alpha = 0.05, 
-                 adjust = "tukey", details = TRUE)
- library(knitr)
-kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.1 ))
+## quadratic trend
 
+new_netdemask_z$pquad = (new_netdemask_z$pathlength)^2
+
+RTprime_model_quad = lmer(data = new_netdemask_z, 
+                          zRTTarget_trim ~ zRTPrime_trim + pathlength + 
+                            pquad+ MeanLDTZ + MeanLength + MeanLogF + 
+                            (1|subject) + (1|ItemNumber))
+summary(RTprime_model_quad)
+car::Anova(RTprime_model_quad)
+
+
+
+RTprime_model_2_2 = lmer(data = new_netdemask_z, 
+                          zRTTarget_trim ~ zRTPrime_trim*pathlengthfac + 
+                            (1|subject) + (1|ItemNumber))
+summary(RTprime_model_2_2)
+car::Anova(RTprime_model_2_2)
+
+anova(RTprime_model_2, RTprime_model_2_2) ## no difference interaction not reqd
+
+ ## centering so that contrasts are easier
+new_netdemask_z$mean_len_c = scale(new_netdemask_z$MeanLength, 
+                             center = TRUE, scale = FALSE)
+new_netdemask_z$mean_logf_c = scale(new_netdemask_z$MeanLogF, 
+                              center = TRUE, scale = FALSE)
+new_netdemask_z$mean_ldtz_c = scale(new_netdemask_z$MeanLDTZ, 
+                              center = TRUE, scale = FALSE)
+
+RTprime_model_2_3 = lmer(data = new_netdemask_z, 
+                          zRTTarget_trim ~ zRTPrime_trim + pathlengthfac + 
+                         mean_len_c + mean_logf_c + mean_ldtz_c +
+                            (1|subject) + (1|ItemNumber))
+summary(RTprime_model_2_3)
+car::Anova(RTprime_model_2_3)
 
 RTprime_model_3 = lmer(data = new_netdemask_z, 
                           zRTTarget_trim ~ pathlengthfac + 
@@ -434,7 +460,60 @@ summary(RTprime_model_3)
 car::Anova(RTprime_model_3)
 
 anova(RTprime_model_3, RTprime_model_2)
+anova(RTprime_model, RTprime_model_2)
 ```
+
+## Contrasts
+
+```{r}
+groups <- read.table('groupsdemasking.csv',
+                     sep=',',header=TRUE,stringsAsFactors=FALSE)
+groups
+
+dummy_codes <- as.matrix(groups[,3:7])
+dummy_codes
+
+fixed_effects <- matrix(fixef(RTprime_model_2))
+fixed_effects
+
+means_matrix <- matrix(rep(0,42),ncol=7,nrow=6)
+means_matrix[,1] <- 1
+means_matrix[,2] <- 0
+means_matrix[,3:7] <- dummy_codes[,1:5]
+means_matrix
+
+means <- means_matrix %*% fixed_effects
+print(cbind(means,groups[,2]))
+
+contrast_matrix <- matrix(c(
+  1,-1,0,0,0,0,
+  1,0,-1,0,0,0,
+  0,1,-1,0,0,0,
+  0,0,1,-1,0,0,
+  0,0,0,1,-1,0,
+  0,0,0,0,1,-1,
+  0,0,1,0,-1,0,
+  0,0,1,0,0,-1), nrow=8,ncol=6,byrow=TRUE)
+row.names(contrast_matrix) <- c("path 1 vs. path 2 ",
+                                "path 1 vs. path 3 ",
+                                "path 2 vs. path 3",
+                                "path 3 vs. path 4",
+                                "path 4 vs. path 6",
+                                "path 6 vs. path 15",
+                                "path 3 vs. path 6 ",
+                                "path 3 vs. path 15  ")
+
+matrix_for_glht <-contrast_matrix %*%  means_matrix
+matrix_for_glht
+
+matrix_for_glht <-contrast_matrix %*%  means_matrix
+matrix_for_glht
+glht_sem <- multcomp::glht(RTprime_model_2, 
+                           linfct = matrix_for_glht, 
+              alternative = "two.sided", rhs = 0)
+summary(glht_sem)
+```
+
 ## Plot
 ```{r}
 primeplot = new_netdemask_z %>%
@@ -490,6 +569,168 @@ path_group %>%
   #scale_x_continuous(breaks = c(1,2,3,4,5,6,10,15,20))+
     xlab("Path Length") + ylab("z-RT to recognise Target") + 
   ggtitle("RT to Demask Target by Path Length")  +
+   theme(axis.text = element_text(size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+         plot.title = element_text(hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+```
+
+# Other Networks
+
+## Steyvers Non Directed
+
+```{r}
+library(lme4)
+new_netdemask_z$Undirected = as.double(as.character(new_netdemask_z$Undirected))
+new_netdemask_z$Directed = as.double(as.character(new_netdemask_z$Directed))
+
+new_netdemask_z$undirectedfac = ordered(as.factor(as.character(new_netdemask_z$Undirected)),                             levels = c("1", "2", "3", "4"))
+
+
+contrasts(new_netdemask_z$undirectedfac) = contr.treatment(4, base = 4)
+RTprime_undirected = lmer(data = new_netdemask_z, 
+                          zRTTarget_trim ~ zRTPrime_trim + undirectedfac + 
+                            (1|subject) + (1|ItemNumber))
+summary(RTprime_undirected)
+car::Anova(RTprime_undirected)
+
+RTprime_undirected_quad = lmer(data = new_netdemask_z, 
+                          zRTTarget_trim ~ zRTPrime_trim + Undirected + 
+                            I(Undirected^2)+
+                            (1|subject) + (1|ItemNumber))
+summary(RTprime_undirected_quad)
+car::Anova(RTprime_undirected_quad)
+
+```
+
+### Plot
+
+```{r}
+z_rmisc_undirected = Rmisc::summarySE(new_netdemask_z, 
+                        measurevar = "zRTTarget_trim",
+                        groupvars = c("Undirected"))
+z_rmisc_undirected = z_rmisc_undirected %>% filter(Undirected != "NA")
+z_rmisc_undirected$undirectedfac = ordered(as.factor(as.character(z_rmisc_undirected$Undirected)),                             levels = c("1", "2", "3", "4"))
+
+z_rmisc_undirected$zRTTarget_trim = as.numeric(z_rmisc_undirected$zRTTarget_trim)
+
+library(ggplot2)
+library(ggthemes)
+
+z_rmisc_undirected %>% 
+  ggplot(aes(x = undirectedfac, y = zRTTarget_trim, group = 1))+
+  geom_point()+
+#  geom_smooth(method = "loess")+
+geom_line(color = "red")+
+   geom_errorbar(aes(ymin=zRTTarget_trim - ci, ymax=zRTTarget_trim + ci), 
+             width=.05, color = "gray30", 
+             position = position_dodge(0.7))+
+ theme_few()+
+  #scale_x_continuous(breaks = c(1,2,3,4,5,6,10,15,20))+
+    xlab("Path Length") + ylab("z-RT to Recognise Target") + 
+  ggtitle("z-RT to Demask Target by Path Length (non directed)")  +
+   theme(axis.text = element_text(size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+         plot.title = element_text(hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+```
+
+## Steyvers Directed
+
+```{r}
+library(lme4)
+new_netdemask_z$newdirected = ifelse(new_netdemask_z$Directed == "Inf" | 
+                              new_netdemask_z$Directed == "NA", NA,
+                              new_netdemask_z$Directed)
+
+new_netdemask_z$directedcollapsed = ifelse((new_netdemask_z$newdirected == "5" |
+                                      new_netdemask_z$newdirected == "6" |
+                                       new_netdemask_z$newdirected == "7" |
+                                       new_netdemask_z$newdirected == "8"), "H",
+                              new_netdemask_z$newdirected)
+
+
+new_netdemask_z$directedfac = 
+  ordered(as.factor(as.character(new_netdemask_z$newdirected)), 
+                            levels = c("1", "2", "3", "4", "5", 
+                                       "6", "7", "8"))
+contrasts(new_netdemask_z$directedfac) = contr.treatment(8, base = 5)
+
+new_netdemask_z$collapsedfac = 
+  ordered(as.factor(as.character(new_netdemask_z$directedcollapsed)), 
+                            levels = c("1", "2", "3", "4", "H"))
+contrasts(new_netdemask_z$collapsedfac) = contr.treatment(5, base = 5)
+
+
+RTprime_directed = lmer(data = new_netdemask_z, 
+                          zRTTarget_trim ~ zRTPrime_trim + directedfac + 
+                            (1|subject) + (1|ItemNumber))
+summary(RTprime_directed)
+car::Anova(RTprime_directed)
+
+```
+
+### Plot Collapsed
+
+```{r}
+z_rmisc_directed = Rmisc::summarySE(new_netdemask_z, 
+                        measurevar = "zRTTarget_trim",
+                        groupvars = c("collapsedfac"))
+z_rmisc_directed = z_rmisc_directed %>% filter(collapsedfac != "NA")
+z_rmisc_directed$collapsedfac2 = ordered(as.factor(as.character(z_rmisc_directed$collapsedfac)),                             levels = c("1", "2", "3", "4", "H"))
+
+z_rmisc_directed$zRTTarget_trim = as.numeric(z_rmisc_directed$zRTTarget_trim)
+
+library(ggplot2)
+library(ggthemes)
+
+z_rmisc_directed %>% 
+  ggplot(aes(x = collapsedfac2, y = zRTTarget_trim, group = 1))+
+  geom_point()+
+#  geom_smooth(method = "loess")+
+geom_line(color = "red")+
+   geom_errorbar(aes(ymin=zRTTarget_trim - ci, ymax=zRTTarget_trim + ci), 
+             width=.05, color = "gray30", 
+             position = position_dodge(0.7))+
+ theme_few()+
+  #scale_x_continuous(breaks = c(1,2,3,4,5,6,10,15,20))+
+    xlab("Path Length") + ylab("z-RT to Recognise Target") + 
+  ggtitle("z-RT to Demask Target by Path Length (directed)")  +
+   theme(axis.text = element_text(size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+         plot.title = element_text(hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+```
+
+### Plot Not Collapsed
+
+```{r}
+z_rmisc_directed = Rmisc::summarySE(new_netdemask_z, 
+                        measurevar = "zRTTarget_trim",
+                        groupvars = c("directedfac"))
+z_rmisc_directed = z_rmisc_directed %>% filter(directedfac != "NA")
+z_rmisc_directed$collapsedfac2 = ordered(as.factor(as.character(z_rmisc_directed$directedfac)),                             levels = c("1", "2", "3", "4", "5", "6", "7", "8"))
+
+z_rmisc_directed$zRTTarget_trim = as.numeric(z_rmisc_directed$zRTTarget_trim)
+
+library(ggplot2)
+library(ggthemes)
+
+z_rmisc_directed %>% 
+  ggplot(aes(x = collapsedfac2, y = zRTTarget_trim, group = 1))+
+  geom_point()+
+#  geom_smooth(method = "loess")+
+geom_line(color = "red")+
+   geom_errorbar(aes(ymin=zRTTarget_trim - ci, ymax=zRTTarget_trim + ci), 
+             width=.05, color = "gray30", 
+             position = position_dodge(0.7))+
+ theme_few()+
+  #scale_x_continuous(breaks = c(1,2,3,4,5,6,10,15,20))+
+    xlab("Path Length") + ylab("z-RT to Recognise Target") + 
+  ggtitle("z-RT to Demask Target by Path Length (directed)")  +
    theme(axis.text = element_text(size = rel(1)),
           axis.title = element_text(face = "bold", size = rel(1)),
           legend.title = element_text(face = "bold", size = rel(1)),
