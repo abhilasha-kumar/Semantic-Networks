@@ -1,0 +1,512 @@
+"Prime11.RESP.Trial.", "Prime12.RESP.Trial.",
+"Prime13.RESP.Trial.", "Prime14.RESP.Trial.",
+"Prime15.RESP.Trial.", "Prime16.RESP.Trial.",
+"Prime17.RESP.Trial.", "Prime18.RESP.Trial.",
+"Prime1.RT.Trial.","Prime2.RT.Trial.",
+"Prime3.RT.Trial.","Prime4.RT.Trial.",
+"Prime5.RT.Trial.","Prime6.RT.Trial.",
+"Prime7.RT.Trial.","Prime8.RT.Trial.",
+"Prime9.RT.Trial.","Prime10.RT.Trial.",
+"Prime11.RT.Trial.","Prime12.RT.Trial.",
+"Prime13.RT.Trial.","Prime14.RT.Trial.",
+"Prime15.RT.Trial.","Prime16.RT.Trial.",
+"Prime17.RT.Trial.","Prime18.RT.Trial.")]
+for(i in 1:nrow(f_primeno)){
+for(j in 1:ncol(f_primeno)){
+x = f_primeno[i,j]
+if(is.na(f_primeno[i,j]) | x == "" ){
+f_primeno[i,j] = 0
+}
+}
+}
+write.csv(f_primeno, file = "S21_PrimeNO.csv")
+f_targetmask = f[,c("TMask1.RESP.Trial.", "TMask2.RESP.Trial.",
+"TMask3.RESP.Trial.", "TMask4.RESP.Trial.",
+"TMask5.RESP.Trial.", "TMask6.RESP.Trial.",
+"TMask7.RESP.Trial.", "TMask8.RESP.Trial.",
+"TMask9.RESP.Trial.", "TMask10.RESP.Trial.",
+"TMask11.RESP.Trial.", "TMask12.RESP.Trial.",
+"TMask13.RESP.Trial.", "TMask14.RESP.Trial.",
+"TMask15.RESP.Trial.", "TMask16.RESP.Trial.",
+"TMask17.RESP.Trial.", "TMask18.RESP.Trial.",
+"TMask1.RT.Trial.","TMask2.RT.Trial.",
+"TMask3.RT.Trial.","TMask4.RT.Trial.",
+"TMask5.RT.Trial.","TMask6.RT.Trial.",
+"TMask7.RT.Trial.","TMask8.RT.Trial.",
+"TMask9.RT.Trial.","TMask10.RT.Trial.",
+"TMask11.RT.Trial.","TMask12.RT.Trial.",
+"TMask13.RT.Trial.","TMask14.RT.Trial.",
+"TMask15.RT.Trial.","TMask16.RT.Trial.",
+"TMask17.RT.Trial.","TMask18.RT.Trial.")]
+for(i in 1:nrow(f_targetmask)){
+for(j in 1:ncol(f_targetmask)){
+x = f_targetmask[i,j]
+if(is.na(f_targetmask[i,j]) | x == "" ){
+f_targetmask[i,j] = 0
+}
+}
+}
+write.csv(f_targetmask, file = "S21_TargetMask.csv")
+f_targetno = f[,c("Target1.RESP.Trial.", "Target2.RESP.Trial.",
+"Target3.RESP.Trial.", "Target4.RESP.Trial.",
+"Target5.RESP.Trial.", "Target6.RESP.Trial.",
+"Target7.RESP.Trial.", "Target8.RESP.Trial.",
+"Target9.RESP.Trial.", "Target10.RESP.Trial.",
+"Target11.RESP.Trial.", "Target12.RESP.Trial.",
+"Target13.RESP.Trial.", "Target14.RESP.Trial.",
+"Target15.RESP.Trial.", "Target16.RESP.Trial.",
+"Target17.RESP.Trial.", "Target18.RESP.Trial.",
+"Target1.RT.Trial.","Target2.RT.Trial.",
+"Target3.RT.Trial.","Target4.RT.Trial.",
+"Target5.RT.Trial.","Target6.RT.Trial.",
+"Target7.RT.Trial.","Target8.RT.Trial.",
+"Target9.RT.Trial.","Target10.RT.Trial.",
+"Target11.RT.Trial.","Target12.RT.Trial.",
+"Target13.RT.Trial.","Target14.RT.Trial.",
+"Target15.RT.Trial.","Target16.RT.Trial.",
+"Target17.RT.Trial.","Target18.RT.Trial.")]
+for(i in 1:nrow(f_targetno)){
+for(j in 1:ncol(f_targetno)){
+x = f_targetno[i,j]
+if(is.na(f_targetno[i,j]) | x == "" ){
+f_targetno[i,j] = 0
+}
+}
+}
+write.csv(f_targetno, file = "S21_TargetNO.csv")
+#whichmask
+maskingaggregates = matrix(NA, nrow = 240, ncol = 10)
+colnames(maskingaggregates) = c("PrimeMaskNo", "PrimeNo", "TargetMaskNo", "TargetNo",
+"PrimeMaskRT", "PrimeNoRT", "TargetMaskRT", "TargetNoRT",
+"RTrecognisePrime", "RTrecogniseTarget")
+#download all masks and primes/targets SPACE and RT data into 4 dataframes
+primemask <- read.csv("S21_PrimeMask.csv", header=TRUE, sep= ",")
+primemask = primemask[,-1]
+colnames(primemask) = c("Mask1", "Mask2", "Mask3","Mask4","Mask5",
+"Mask6","Mask7","Mask8","Mask9","Mask10","Mask11",
+"Mask12","Mask13","Mask14","Mask15","Mask16","Mask17","Mask18")
+primemask$Mask1 = as.character(primemask$Mask1)
+primemask$Mask2 = as.character(primemask$Mask2)
+primemask$Mask3 = as.character(primemask$Mask3)
+primemask$Mask4 = as.character(primemask$Mask4)
+primemask$Mask5 = as.character(primemask$Mask5)
+primemask$Mask6 = as.character(primemask$Mask6)
+primemask$Mask7 = as.character(primemask$Mask7)
+primemask$Mask8 = as.character(primemask$Mask8)
+primemask$Mask9 = as.character(primemask$Mask9)
+primemask$Mask10 = as.character(primemask$Mask10)
+primemask$Mask11 = as.character(primemask$Mask11)
+primemask$Mask12 = as.character(primemask$Mask12)
+primemask$Mask13 = as.character(primemask$Mask13)
+primemask$Mask14 = as.character(primemask$Mask14)
+primemask$Mask15 = as.character(primemask$Mask15)
+primemask$Mask16 = as.character(primemask$Mask16)
+primemask$Mask17 = as.character(primemask$Mask17)
+primemask$Mask18 = as.character(primemask$Mask18)
+primenodata <- read.csv("S21_PrimeNO.csv", header=TRUE, sep= ",")
+primenodata = primenodata[,-1]
+colnames(primenodata) = c("Prime1", "Prime2", "Prime3","Prime4","Prime5",
+"Prime6","Prime7","Prime8","Prime9","Prime10",
+"Prime11","Prime12","Prime13","Prime14","Prime15",
+"Prime16","Prime17","Prime18")
+primenodata$Prime1 = as.character(primenodata$Prime1)
+primenodata$Prime2 = as.character(primenodata$Prime2)
+primenodata$Prime3 = as.character(primenodata$Prime3)
+primenodata$Prime4 = as.character(primenodata$Prime4)
+primenodata$Prime5 = as.character(primenodata$Prime5)
+primenodata$Prime6 = as.character(primenodata$Prime6)
+primenodata$Prime7 = as.character(primenodata$Prime7)
+primenodata$Prime8 = as.character(primenodata$Prime8)
+primenodata$Prime9 = as.character(primenodata$Prime9)
+primenodata$Prime10 = as.character(primenodata$Prime10)
+primenodata$Prime11 = as.character(primenodata$Prime11)
+primenodata$Prime12 = as.character(primenodata$Prime12)
+primenodata$Prime13 = as.character(primenodata$Prime13)
+primenodata$Prime14 = as.character(primenodata$Prime14)
+primenodata$Prime15 = as.character(primenodata$Prime15)
+primenodata$Prime16 = as.character(primenodata$Prime16)
+primenodata$Prime17 = as.character(primenodata$Prime17)
+primenodata$Prime18 = as.character(primenodata$Prime18)
+targetmask <- read.csv("S21_TargetMask.csv", header=TRUE, sep= ",")
+targetmask = targetmask[,-1]
+colnames(targetmask) = c("Mask1", "Mask2", "Mask3","Mask4","Mask5",
+"Mask6","Mask7","Mask8","Mask9","Mask10","Mask11",
+"Mask12","Mask13","Mask14","Mask15","Mask16","Mask17","Mask18")
+targetmask$Mask1 = as.character(targetmask$Mask1)
+targetmask$Mask2 = as.character(targetmask$Mask2)
+targetmask$Mask3 = as.character(targetmask$Mask3)
+targetmask$Mask4 = as.character(targetmask$Mask4)
+targetmask$Mask5 = as.character(targetmask$Mask5)
+targetmask$Mask6 = as.character(targetmask$Mask6)
+targetmask$Mask7 = as.character(targetmask$Mask7)
+targetmask$Mask8 = as.character(targetmask$Mask8)
+targetmask$Mask9 = as.character(targetmask$Mask9)
+targetmask$Mask10 = as.character(targetmask$Mask10)
+targetmask$Mask11 = as.character(targetmask$Mask11)
+targetmask$Mask12 = as.character(targetmask$Mask12)
+targetmask$Mask13 = as.character(targetmask$Mask13)
+targetmask$Mask14 = as.character(targetmask$Mask14)
+targetmask$Mask15 = as.character(targetmask$Mask15)
+targetmask$Mask16 = as.character(targetmask$Mask16)
+targetmask$Mask17 = as.character(targetmask$Mask17)
+targetmask$Mask18 = as.character(targetmask$Mask18)
+targetnodata <- read.csv("S21_TargetNO.csv", header=TRUE, sep= ",")
+targetnodata = targetnodata[,-1]
+colnames(targetnodata) = c("Target1", "Target2","Target3","Target4","Target5",
+"Target6","Target7","Target8","Target9","Target10",
+"Target11","Target12","Target13","Target14","Target15",
+"Target16","Target17","Target18")
+targetnodata$Target1 = as.character(targetnodata$Target1)
+targetnodata$Target2 = as.character(targetnodata$Target2)
+targetnodata$Target3 = as.character(targetnodata$Target3)
+targetnodata$Target4 = as.character(targetnodata$Target4)
+targetnodata$Target5 = as.character(targetnodata$Target5)
+targetnodata$Target6 = as.character(targetnodata$Target6)
+targetnodata$Target7 = as.character(targetnodata$Target7)
+targetnodata$Target8 = as.character(targetnodata$Target8)
+targetnodata$Target9 = as.character(targetnodata$Target9)
+targetnodata$Target10 = as.character(targetnodata$Target10)
+targetnodata$Target11 = as.character(targetnodata$Target11)
+targetnodata$Target12 = as.character(targetnodata$Target12)
+targetnodata$Target13 = as.character(targetnodata$Target13)
+targetnodata$Target14 = as.character(targetnodata$Target14)
+targetnodata$Target15 = as.character(targetnodata$Target15)
+targetnodata$Target16 = as.character(targetnodata$Target16)
+targetnodata$Target17 = as.character(targetnodata$Target17)
+targetnodata$Target18 = as.character(targetnodata$Target18)
+#for prime mask
+for(i in 1:240){
+#print("inside i loop")
+#print (i)
+for(j in 1:18){
+# print("inside j loop")
+#print(j)
+if(primemask[i,j] == "{SPACE}"){
+maskingaggregates[i,1] = j
+maskingaggregates[i,5] = primemask[i,j+18]
+break
+}
+else {
+maskingaggregates[i,1] = 99
+}
+}
+}
+#for prime number
+for(i in 1:240){
+#print("inside i loop")
+#print (i)
+for(j in 1:18){
+# print("inside j loop")
+#print(j)
+if(primenodata[i,j] == "{SPACE}"){
+maskingaggregates[i,2] = j
+maskingaggregates[i,6] = primenodata[i,j+18]
+break
+}
+else {
+maskingaggregates[i,2] = 99
+}
+}
+}
+#for targetmask
+for(i in 1:240){
+#print("inside i loop")
+#print (i)
+for(j in 1:18){
+# print("inside j loop")
+#print(j)
+if(targetmask[i,j] == "{SPACE}"){
+maskingaggregates[i,3] = j
+maskingaggregates[i,7] = targetmask[i,j+18]
+break
+}
+else {
+maskingaggregates[i,3] = 99
+}
+}
+}
+#for target number
+for(i in 1:240){
+#print("inside i loop")
+#print (i)
+for(j in 1:18){
+# print("inside j loop")
+#print(j)
+if(targetnodata[i,j] == "{SPACE}"){
+maskingaggregates[i,4] = j
+maskingaggregates[i,8] = targetnodata[i,j+18]
+break
+}
+else {
+maskingaggregates[i,4] = 99
+}
+}
+}
+#once we have all the numbers, we need to calculate RT to recognise for both prime and target
+#need a record of exact time
+masktimepassed <- c(500, 984, 1452, 1904, 2340, 2760, 3164,
+3552, 3924, 4280, 4620, 4944, 5252, 5544,
+5820, 6080, 6324, 6552)
+targettimepassed <- c(16, 48, 96, 160, 240, 336, 448, 576, 720,
+880, 1056, 1248, 1456, 1680, 1920, 2176, 2448, 2736)
+#for prime
+for(i in 1:240){
+if(maskingaggregates[i,1] < maskingaggregates[i,2]){
+number = maskingaggregates[i,1]
+if(number != 1){
+newindex = number - 1
+}else {newindex = number}
+maskingaggregates[i,9] = masktimepassed[newindex] +
+targettimepassed[newindex]+
+maskingaggregates[i,5]
+}else {
+number = maskingaggregates[i,2]
+if(number != 1){
+newindex = number - 1
+}else {newindex = number}
+maskingaggregates[i,9] = masktimepassed[newindex] +
+targettimepassed[newindex]+
+maskingaggregates[i,6]
+}
+}
+#for target
+for(i in 1:240){
+if(maskingaggregates[i,3] < maskingaggregates[i,4]){
+number = maskingaggregates[i,3]
+if(number != 1){
+newindex = number - 1
+}else {newindex = number}
+maskingaggregates[i,10] = masktimepassed[newindex] +
+targettimepassed[newindex]+
+maskingaggregates[i,7]
+}else {
+number = maskingaggregates[i,4]
+if(number != 1){
+newindex = number - 1
+}else {newindex = number}
+maskingaggregates[i,10] = masktimepassed[newindex] +
+targettimepassed[newindex]+
+maskingaggregates[i,8]
+}
+}
+#NOTE: If Any RT is NA, we assume participant didn't press anything and thus
+#their RT is total duration of mask+target = 9288ms
+write.csv(maskingaggregates, file = "S21_masks.csv")
+f = read.csv("S22_unscored.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+f_primemask = f[,c("Mask1.RESP.Trial.", "Mask2.RESP.Trial.",
+"Mask3.RESP.Trial.", "Mask4.RESP.Trial.",
+"Mask5.RESP.Trial.", "Mask6.RESP.Trial.",
+"Mask7.RESP.Trial.", "Mask8.RESP.Trial.",
+"Mask9.RESP.Trial.", "Mask10.RESP.Trial.",
+"Mask11.RESP.Trial.", "Mask12.RESP.Trial.",
+"Mask13.RESP.Trial.", "Mask14.RESP.Trial.",
+"Mask15.RESP.Trial.", "Mask16.RESP.Trial.",
+"Mask17.RESP.Trial.", "Mask18.RESP.Trial.",
+"Mask1.RT.Trial.","Mask2.RT.Trial.",
+"Mask3.RT.Trial.","Mask4.RT.Trial.",
+"Mask5.RT.Trial.","Mask6.RT.Trial.",
+"Mask7.RT.Trial.","Mask8.RT.Trial.",
+"Mask9.RT.Trial.","Mask10.RT.Trial.",
+"Mask11.RT.Trial.","Mask12.RT.Trial.",
+"Mask13.RT.Trial.","Mask14.RT.Trial.",
+"Mask15.RT.Trial.","Mask16.RT.Trial.",
+"Mask17.RT.Trial.","Mask18.RT.Trial.")]
+for(i in 1:nrow(f_primemask)){
+for(j in 1:ncol(f_primemask)){
+x = f_primemask[i,j]
+if(is.na(f_primemask[i,j]) | x == "" ){
+f_primemask[i,j] = 0
+}
+}
+}
+write.csv(f_primemask, file = "S22_PrimeMask.csv")
+f_primeno = f[,c("Prime1.RESP.Trial.", "Prime2.RESP.Trial.",
+"Prime3.RESP.Trial.", "Prime4.RESP.Trial.",
+"Prime5.RESP.Trial.", "Prime6.RESP.Trial.",
+"Prime7.RESP.Trial.", "Prime8.RESP.Trial.",
+"Prime9.RESP.Trial.", "Prime10.RESP.Trial.",
+"Prime11.RESP.Trial.", "Prime12.RESP.Trial.",
+"Prime13.RESP.Trial.", "Prime14.RESP.Trial.",
+"Prime15.RESP.Trial.", "Prime16.RESP.Trial.",
+"Prime17.RESP.Trial.", "Prime18.RESP.Trial.",
+"Prime1.RT.Trial.","Prime2.RT.Trial.",
+"Prime3.RT.Trial.","Prime4.RT.Trial.",
+"Prime5.RT.Trial.","Prime6.RT.Trial.",
+"Prime7.RT.Trial.","Prime8.RT.Trial.",
+"Prime9.RT.Trial.","Prime10.RT.Trial.",
+"Prime11.RT.Trial.","Prime12.RT.Trial.",
+"Prime13.RT.Trial.","Prime14.RT.Trial.",
+"Prime15.RT.Trial.","Prime16.RT.Trial.",
+"Prime17.RT.Trial.","Prime18.RT.Trial.")]
+for(i in 1:nrow(f_primeno)){
+for(j in 1:ncol(f_primeno)){
+x = f_primeno[i,j]
+if(is.na(f_primeno[i,j]) | x == "" ){
+f_primeno[i,j] = 0
+}
+}
+}
+write.csv(f_primeno, file = "S22_PrimeNO.csv")
+f_targetmask = f[,c("TMask1.RESP.Trial.", "TMask2.RESP.Trial.",
+"TMask3.RESP.Trial.", "TMask4.RESP.Trial.",
+"TMask5.RESP.Trial.", "TMask6.RESP.Trial.",
+"TMask7.RESP.Trial.", "TMask8.RESP.Trial.",
+"TMask9.RESP.Trial.", "TMask10.RESP.Trial.",
+"TMask11.RESP.Trial.", "TMask12.RESP.Trial.",
+"TMask13.RESP.Trial.", "TMask14.RESP.Trial.",
+"TMask15.RESP.Trial.", "TMask16.RESP.Trial.",
+"TMask17.RESP.Trial.", "TMask18.RESP.Trial.",
+"TMask1.RT.Trial.","TMask2.RT.Trial.",
+"TMask3.RT.Trial.","TMask4.RT.Trial.",
+"TMask5.RT.Trial.","TMask6.RT.Trial.",
+"TMask7.RT.Trial.","TMask8.RT.Trial.",
+"TMask9.RT.Trial.","TMask10.RT.Trial.",
+"TMask11.RT.Trial.","TMask12.RT.Trial.",
+"TMask13.RT.Trial.","TMask14.RT.Trial.",
+"TMask15.RT.Trial.","TMask16.RT.Trial.",
+"TMask17.RT.Trial.","TMask18.RT.Trial.")]
+for(i in 1:nrow(f_targetmask)){
+for(j in 1:ncol(f_targetmask)){
+x = f_targetmask[i,j]
+if(is.na(f_targetmask[i,j]) | x == "" ){
+f_targetmask[i,j] = 0
+}
+}
+}
+write.csv(f_targetmask, file = "S22_TargetMask.csv")
+f_targetno = f[,c("Target1.RESP.Trial.", "Target2.RESP.Trial.",
+"Target3.RESP.Trial.", "Target4.RESP.Trial.",
+"Target5.RESP.Trial.", "Target6.RESP.Trial.",
+"Target7.RESP.Trial.", "Target8.RESP.Trial.",
+"Target9.RESP.Trial.", "Target10.RESP.Trial.",
+"Target11.RESP.Trial.", "Target12.RESP.Trial.",
+"Target13.RESP.Trial.", "Target14.RESP.Trial.",
+"Target15.RESP.Trial.", "Target16.RESP.Trial.",
+"Target17.RESP.Trial.", "Target18.RESP.Trial.",
+"Target1.RT.Trial.","Target2.RT.Trial.",
+"Target3.RT.Trial.","Target4.RT.Trial.",
+"Target5.RT.Trial.","Target6.RT.Trial.",
+"Target7.RT.Trial.","Target8.RT.Trial.",
+"Target9.RT.Trial.","Target10.RT.Trial.",
+"Target11.RT.Trial.","Target12.RT.Trial.",
+"Target13.RT.Trial.","Target14.RT.Trial.",
+"Target15.RT.Trial.","Target16.RT.Trial.",
+"Target17.RT.Trial.","Target18.RT.Trial.")]
+for(i in 1:nrow(f_targetno)){
+for(j in 1:ncol(f_targetno)){
+x = f_targetno[i,j]
+if(is.na(f_targetno[i,j]) | x == "" ){
+f_targetno[i,j] = 0
+}
+}
+}
+write.csv(f_targetno, file = "S22_TargetNO.csv")
+f = read.csv("S22_unscored.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+f_primemask = f[,c("Mask1.RESP.Trial.", "Mask2.RESP.Trial.",
+"Mask3.RESP.Trial.", "Mask4.RESP.Trial.",
+"Mask5.RESP.Trial.", "Mask6.RESP.Trial.",
+"Mask7.RESP.Trial.", "Mask8.RESP.Trial.",
+"Mask9.RESP.Trial.", "Mask10.RESP.Trial.",
+"Mask11.RESP.Trial.", "Mask12.RESP.Trial.",
+"Mask13.RESP.Trial.", "Mask14.RESP.Trial.",
+"Mask15.RESP.Trial.", "Mask16.RESP.Trial.",
+"Mask17.RESP.Trial.", "Mask18.RESP.Trial.",
+"Mask1.RT.Trial.","Mask2.RT.Trial.",
+"Mask3.RT.Trial.","Mask4.RT.Trial.",
+"Mask5.RT.Trial.","Mask6.RT.Trial.",
+"Mask7.RT.Trial.","Mask8.RT.Trial.",
+"Mask9.RT.Trial.","Mask10.RT.Trial.",
+"Mask11.RT.Trial.","Mask12.RT.Trial.",
+"Mask13.RT.Trial.","Mask14.RT.Trial.",
+"Mask15.RT.Trial.","Mask16.RT.Trial.",
+"Mask17.RT.Trial.","Mask18.RT.Trial.")]
+for(i in 1:nrow(f_primemask)){
+for(j in 1:ncol(f_primemask)){
+x = f_primemask[i,j]
+if(is.na(f_primemask[i,j]) | x == "" ){
+f_primemask[i,j] = 0
+}
+}
+}
+write.csv(f_primemask, file = "S22_PrimeMask.csv")
+f_primeno = f[,c("Prime1.RESP.Trial.", "Prime2.RESP.Trial.",
+"Prime3.RESP.Trial.", "Prime4.RESP.Trial.",
+"Prime5.RESP.Trial.", "Prime6.RESP.Trial.",
+"Prime7.RESP.Trial.", "Prime8.RESP.Trial.",
+"Prime9.RESP.Trial.", "Prime10.RESP.Trial.",
+"Prime11.RESP.Trial.", "Prime12.RESP.Trial.",
+"Prime13.RESP.Trial.", "Prime14.RESP.Trial.",
+"Prime15.RESP.Trial.", "Prime16.RESP.Trial.",
+"Prime17.RESP.Trial.", "Prime18.RESP.Trial.",
+"Prime1.RT.Trial.","Prime2.RT.Trial.",
+"Prime3.RT.Trial.","Prime4.RT.Trial.",
+"Prime5.RT.Trial.","Prime6.RT.Trial.",
+"Prime7.RT.Trial.","Prime8.RT.Trial.",
+"Prime9.RT.Trial.","Prime10.RT.Trial.",
+"Prime11.RT.Trial.","Prime12.RT.Trial.",
+"Prime13.RT.Trial.","Prime14.RT.Trial.",
+"Prime15.RT.Trial.","Prime16.RT.Trial.",
+"Prime17.RT.Trial.","Prime18.RT.Trial.")]
+for(i in 1:nrow(f_primeno)){
+for(j in 1:ncol(f_primeno)){
+x = f_primeno[i,j]
+if(is.na(f_primeno[i,j]) | x == "" ){
+f_primeno[i,j] = 0
+}
+}
+}
+write.csv(f_primeno, file = "S22_PrimeNO.csv")
+f_targetmask = f[,c("TMask1.RESP.Trial.", "TMask2.RESP.Trial.",
+"TMask3.RESP.Trial.", "TMask4.RESP.Trial.",
+"TMask5.RESP.Trial.", "TMask6.RESP.Trial.",
+"TMask7.RESP.Trial.", "TMask8.RESP.Trial.",
+"TMask9.RESP.Trial.", "TMask10.RESP.Trial.",
+"TMask11.RESP.Trial.", "TMask12.RESP.Trial.",
+"TMask13.RESP.Trial.", "TMask14.RESP.Trial.",
+"TMask15.RESP.Trial.", "TMask16.RESP.Trial.",
+"TMask17.RESP.Trial.", "TMask18.RESP.Trial.",
+"TMask1.RT.Trial.","TMask2.RT.Trial.",
+"TMask3.RT.Trial.","TMask4.RT.Trial.",
+"TMask5.RT.Trial.","TMask6.RT.Trial.",
+"TMask7.RT.Trial.","TMask8.RT.Trial.",
+"TMask9.RT.Trial.","TMask10.RT.Trial.",
+"TMask11.RT.Trial.","TMask12.RT.Trial.",
+"TMask13.RT.Trial.","TMask14.RT.Trial.",
+"TMask15.RT.Trial.","TMask16.RT.Trial.",
+"TMask17.RT.Trial.","TMask18.RT.Trial.")]
+for(i in 1:nrow(f_targetmask)){
+for(j in 1:ncol(f_targetmask)){
+x = f_targetmask[i,j]
+if(is.na(f_targetmask[i,j]) | x == "" ){
+f_targetmask[i,j] = 0
+}
+}
+}
+write.csv(f_targetmask, file = "S22_TargetMask.csv")
+f_targetno = f[,c("Target1.RESP.Trial.", "Target2.RESP.Trial.",
+"Target3.RESP.Trial.", "Target4.RESP.Trial.",
+"Target5.RESP.Trial.", "Target6.RESP.Trial.",
+"Target7.RESP.Trial.", "Target8.RESP.Trial.",
+"Target9.RESP.Trial.", "Target10.RESP.Trial.",
+"Target11.RESP.Trial.", "Target12.RESP.Trial.",
+"Target13.RESP.Trial.", "Target14.RESP.Trial.",
+"Target15.RESP.Trial.", "Target16.RESP.Trial.",
+"Target17.RESP.Trial.", "Target18.RESP.Trial.",
+"Target1.RT.Trial.","Target2.RT.Trial.",
+"Target3.RT.Trial.","Target4.RT.Trial.",
+"Target5.RT.Trial.","Target6.RT.Trial.",
+"Target7.RT.Trial.","Target8.RT.Trial.",
+"Target9.RT.Trial.","Target10.RT.Trial.",
+"Target11.RT.Trial.","Target12.RT.Trial.",
+"Target13.RT.Trial.","Target14.RT.Trial.",
+"Target15.RT.Trial.","Target16.RT.Trial.",
+"Target17.RT.Trial.","Target18.RT.Trial.")]
+for(i in 1:nrow(f_targetno)){
+for(j in 1:ncol(f_targetno)){
+x = f_targetno[i,j]
+if(is.na(f_targetno[i,j]) | x == "" ){
+f_targetno[i,j] = 0
+}
+}
+}
+write.csv(f_targetno, file = "S22_TargetNO.csv")

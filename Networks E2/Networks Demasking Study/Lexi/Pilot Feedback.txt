@@ -1,0 +1,9 @@
+Pete: start: 10.40, 11.20
+Notes:
+unclear whethere to wait for the whole word or respond as soon as there is some representation available
+
+
+tylenol  pepsi britannica
+
+
+jessica: start: 11 am, 11.30 am 

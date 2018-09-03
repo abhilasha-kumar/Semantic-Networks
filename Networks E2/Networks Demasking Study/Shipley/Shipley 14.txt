@@ -1,0 +1,44 @@
+14,Shipley,12:54 PM,4/17/18
+BEGIN VOCAB,91439249240
+1,talk,draw,eat,speak,sleep,skip this question for now,3,4483.423,3
+2,permit,allow,sew,cut,drive,skip this question for now,1,2500.05,4
+3,pardon,forgive,pound,divide,tell,skip this question for now,1,2933.392,1
+4,couch,pin,eraser,sofa,glass,skip this question for now,3,1650.033,3
+5,remember,swim,recall,number,defy,skip this question for now,2,2050.041,2
+6,tumble,drink,dress,fall,think,skip this question for now,3,2783.389,3
+7,hideous,silvery,tilted,young,dreadful,skip this question for now,4,2183.377,4
+8,cordial,swift,muddy,leafy,hearty,skip this question for now,4,4366.754,4
+9,evident,green,obvious,skeptical,afraid,skip this question for now,2,2316.713,2
+10,impostor,conductor,officer,book,pretender,skip this question for now,4,2550.051,4
+11,merit,deserve,distrust,fight,separate,skip this question for now,1,4550.091,1
+12,fascinate,welcome,fix,stir,enchant,skip this question for now,4,2066.708,4
+13,indicate,defy,excite,signify,bicker,skip this question for now,3,5000.1,3
+14,ignorant,red,sharp,uninformed,precise,skip this question for now,3,2700.054,3
+15,fortify,submerge,strengthen,vent,deaden,skip this question for now,2,2250.045,2
+16,renown,length,head,fame,loyalty,skip this question for now,3,2800.056,3
+17,narrate,yield,buy,associate,tell,skip this question for now,4,3100.062,4
+18,massive,bright,large,speedy,low,skip this question for now,2,1716.701,2
+19,hilarity,laughter,speed,grace,malice,skip this question for now,1,3016.727,1
+20,smirched,stolen,pointed,remade,soiled,skip this question for now,4,4200.084,3
+21,squander,tease,belittle,cut,waste,skip this question for now,4,2350.047,1
+22,caption,drum,ballast,heading,ape,skip this question for now,3,11133.556,3
+23,facilitate,help,turn,strip,bewilder,skip this question for now,1,6233.458,1
+24,jocose,humorous,paltry,fervid,plain,skip this question for now,1,3516.737,3
+25,apprise,reduce,strew,inform,delight,skip this question for now,3,4600.092,4
+26,rue,eat,lament,dominate,cure,skip this question for now,2,1900.038,2
+27,denizen,senator,inhabitant,fish,atom,skip this question for now,2,4350.087,2
+28,divest,dispossess,intrude,rally,pledge,skip this question for now,1,4383.421,2
+29,amulet,charm,orphan,dingo,pond,skip this question for now,1,3400.068,1
+30,inexorable,untidy,involatile,rigid,sparse,skip this question for now,3,6366.794,3
+31,serrated,dried,notched,armed,blunt,skip this question for now,2,2933.392,2
+32,lissome,moldy,loose,supple,convex,skip this question for now,3,3533.404,4
+33,mollify,mitigate,direct,pertain,abuse,skip this question for now,1,1866.704,1
+34,plagiarize,appropriate,intend,revoke,maintain,skip this question for now,1,8033.494,1
+35,orifice,brush,hole,building,lute,skip this question for now,2,3333.4,1
+36,querulous,maniacal,curious,devout,complaining,skip this question for now,4,4583.425,3
+37,pariah,outcast,priest,lentil,locker,skip this question for now,1,2333.38,2
+38,abet,waken,ensue,incite,placate,skip this question for now,3,5716.781,3
+39,temerity,rashness,timidity,desire,kindness,skip this question for now,1,6233.458,2
+40,pristine,vain,sound,first,level,skip this question for now,2,5183.437,2
+END VOCAB,91439259294
+
