@@ -1,0 +1,141 @@
+---
+title: "Network Definitions Study"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Reading the Data
+
+``` {r warning=F, message=F}
+library(dplyr)
+ratings = read.csv("Compiled_NetworksE4.csv", header = TRUE, sep = ",")
+
+head(ratings[,c(1,4,9,17:19)])
+
+ratings$Rating = as.numeric(ratings$Rating)
+ratings$Rating = ratings$Rating + 1
+
+ratings = ratings %>% filter(!is.na(Rating))
+```
+
+# Separating PLs and Targets
+
+```{r}
+library(dplyr)
+PL1 = ratings %>% filter(type == "PL1")
+PL3 = ratings %>% filter(type == "PL3")
+PL6 = ratings %>% filter(type == "PL6")
+PL15 = ratings %>% filter(type == "PL15")
+target = ratings %>% filter(type == "Target")
+```
+
+### Mean Ratings
+
+```{r}
+ratings_mean = group_by(ratings, subject, word, type) %>%
+  summarise_at(vars(Rating), mean)
+```
+
+## Scatterplot per type
+
+```{r}
+library(ggplot2)
+library(ggthemes)
+ratings_rmisc = Rmisc::summarySE(ratings,
+                                 measurevar = "Rating",
+                                 groupvars = c("word","type"))
+
+ratings_rmisc %>% 
+  ggplot(aes(x = type, y = Rating, group = word, color = word))+
+  geom_point()+
+  guides(color= FALSE)+
+# geom_jitter(width = 0.01, height = .1)+
+geom_text(aes(label=word),hjust=1, vjust=1, size = 2.5,
+          position=position_jitter(width=.1,height=.1)) +
+  theme_few()+
+#scale_y_continuous(breaks = seq(1,5,1), labels=c("1" = "1", "2" = "2",
+ #           "3" = "3", "4" = "4", "5" = "5"))+
+  xlab("Word Type") + ylab("Rating") + 
+  ggtitle("Definition Rating for Each Word Type")  +
+   theme(axis.text = element_text(size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+         plot.title = element_text(hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+```
+
+# z-scored Ratings
+
+```{r}
+meanrating = group_by(ratings, subject) %>%
+  summarise_at(vars(Rating), mean)
+colnames(meanrating) = c("subject", 
+                     "meanRating")
+
+sdrating = group_by(ratings, subject) %>%
+  summarise_at(vars(Rating), sd)
+colnames(sdrating) = c("subject",
+                     "sdRating")
+
+Rating_agg = merge(meanrating, sdrating, by = "subject")
+
+## merge aggregate info with long data
+rating_z = merge(ratings, Rating_agg, by = "subject", all.x = T)
+
+## person and grand-mean centered scores using original and aggregate
+library(dplyr)
+rating_z = rating_z %>% 
+  mutate( zRating =  (Rating - meanRating)/sdRating)
+                 
+## checking: subject level means should be zero
+
+sub_pic = group_by(rating_z, subject) %>%
+  summarise_at(vars(zRating), mean)
+```
+
+## z-Scatterplot per type
+
+```{r}
+
+ratings_mean = group_by(ratings, subject, word, type) %>%
+  summarise_at(vars(Rating), mean)
+
+library(ggplot2)
+library(ggthemes)
+z_ratings_rmisc = Rmisc::summarySE(rating_z,
+                                 measurevar = "zRating",
+                                 groupvars = c("word","type"))
+
+z_ratings_rmisc %>% 
+  ggplot(aes(x = type, y = zRating, group = word, color = word))+
+  geom_point()+
+  guides(color= FALSE)+
+# geom_jitter(width = 0.01, height = .1)+
+geom_text(aes(label=word),hjust=1, vjust=1, size = 2.5,
+          position=position_jitter(width=.1,height=.1)) +
+  theme_few()+
+#scale_y_continuous(breaks = seq(1,5,1), labels=c("1" = "1", "2" = "2",
+ #           "3" = "3", "4" = "4", "5" = "5"))+
+  xlab("Word Type") + ylab("z-scored Rating") + 
+  ggtitle("Definition Rating (z-score) for Each Word Type")  +
+   theme(axis.text = element_text(size = rel(1)),
+          axis.title = element_text(face = "bold", size = rel(1)),
+          legend.title = element_text(face = "bold", size = rel(1)),
+         plot.title = element_text(hjust = .5),
+         strip.text.x = element_text(face = "bold", size = rel(1.4)))
+```
+
+
+# Cutoff 3
+
+```{r}
+cutoff3 = ratings_rmisc %>% filter(Rating <=3)
+
+nrow(ratings) - nrow(cutoff)
+```
+

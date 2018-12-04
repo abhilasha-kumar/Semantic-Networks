@@ -1,0 +1,590 @@
+\documentclass[letterpaper]{article}
+\usepackage[a4paper, total={7in, 8in}]{geometry}
+
+\usepackage{xcolor}
+\usepackage{Sweavel}
+\usepackage{graphicx}
+\def\Sweavesize{\normalsize}
+% Uncomment some of the following to use some alternatives:
+\def\Rcolor{\color{black}}
+\def\Routcolor{\color{blue}}
+\def\Rcommentcolor{\color{blue}}
+\definecolor{babyblueeyes}{rgb}{0.74, 0.83, 0.95}
+
+% To change background color or R code and/or output, use e.g.:
+\def\Rbackground{\color{babyblueeyes}}
+\def\Routbackground{\color[gray]{.8}}
+
+% To use rgb specifications use \color[rgb]{ , , }
+% To use gray scale use e.g. \color[gray]{0.5}
+% If you change any of these after the first chunk is produced, the
+% changes will have effect only for the next chunk.
+
+\title{Networks Retrieval Study}
+\author{Abhilasha Kumar}
+
+\begin{document}
+\SweaveOpts{concordance=FALSE}
+
+ \maketitle
+
+\section{Reading the Data File}
+
+<<>>=
+net = read.csv("CompiledData_E4.csv", header = TRUE, sep = ",")
+#net = net %>% filter(!Subject %in% c(5, 1, 2,6, 3,7))
+@
+
+\section {Item Analysis}
+
+<<>>=
+library(dplyr)
+net_itemacc = group_by(net, ActualTarget) %>%
+  summarize_at(vars(TargetAccuracy), mean) %>%
+arrange(TargetAccuracy)
+
+net_primeitem_acc = group_by(net, ActualPrime, ActualTarget) %>%
+  summarize_at(vars(PrimeFirstResp_ACC), mean) %>%
+arrange(ActualTarget, PrimeFirstResp_ACC)
+
+net_primeitem_acc = net_primeitem_acc %>% filter(PrimeFirstResp_ACC <= 0.1 |
+                                                   PrimeFirstResp_ACC == "1")
+
+overall_sub_acc = group_by(net, Subject) %>%
+  summarize_at(vars(TargetAccuracy), mean)
+
+@
+
+\section {Figures}
+
+\subsection {Prime Accuracy}
+<<fig=TRUE>>=
+net_primeacc = group_by(net, Subject, pathlength) %>%
+  summarize_at(vars(PrimeFirstResp_ACC), mean)
+  netprime_rmisc = Rmisc::summarySE(net_primeacc, 
+                      measurevar = "PrimeFirstResp_ACC",
+                      groupvars = c("pathlength"))
+netprime_rmisc$pathlength = as.factor(netprime_rmisc$pathlength)
+library(ggplot2)
+library(ggthemes)
+netprime_rmisc %>% 
+ggplot(aes(x = pathlength, 
+           y = PrimeFirstResp_ACC))+
+ geom_bar(stat = "identity", position = "dodge", 
+          width = 0.5)+
+  geom_errorbar(aes(ymin = PrimeFirstResp_ACC - se, 
+                    ymax = PrimeFirstResp_ACC + se),
+                width=.05, position=position_dodge(.5)) +
+  theme_few()+
+  scale_fill_wsj()+
+  xlab("Path Length") + ylab("Mean Prime Accuracy") + 
+  ggtitle("Prime Accuracy by Path Length ") +
+    theme(axis.text = element_text(face = "bold", size = rel(1.2)),
+          axis.title = element_text(face = "bold", size = rel(1.2)),
+          legend.title = element_text(face = "bold", size = rel(1.2)),
+          plot.title = element_text( size = rel(1.4), hjust = .5))
+
+@
+
+\subsection {Target Accuracy}
+<<fig=TRUE>>=
+net_targetacc = group_by(net, Subject, pathlength) %>%
+  summarize_at(vars(TargetAccuracy), mean)
+  nettarget_rmisc = Rmisc::summarySE(net_targetacc, 
+                      measurevar = "TargetAccuracy",
+                      groupvars = c("pathlength"))
+nettarget_rmisc$pathlength = as.factor(nettarget_rmisc$pathlength)
+library(ggplot2)
+library(ggthemes)
+nettarget_rmisc %>% 
+ggplot(aes(x = pathlength, 
+           y = TargetAccuracy))+
+ geom_bar(stat = "identity", position = "dodge", 
+          width = 0.5)+
+  geom_errorbar(aes(ymin = TargetAccuracy - se, 
+                    ymax = TargetAccuracy + se),
+                width=.05, position=position_dodge(.5)) +
+  theme_few()+
+  scale_fill_wsj()+
+  xlab("Path Length") + ylab("Mean Target Accuracy") + 
+  ggtitle("Target Accuracy by Path Length") +
+    theme(axis.text = element_text(face = "bold", size = rel(1.2)),
+          axis.title = element_text(face = "bold", size = rel(1.2)),
+          legend.title = element_text(face = "bold", size = rel(1.2)),
+          plot.title = element_text( size = rel(1.4), hjust = .5))
+
+@
+
+
+\subsection {Prime Retrieval}
+<<fig=TRUE>>=
+net_subject = group_by(net, Subject, pathlength, PrimeFirstResp_ACC) %>%
+  summarize_at(vars(TargetAccuracy), mean)
+  net_rmisc = Rmisc::summarySE(net, 
+                      measurevar = "TargetAccuracy",
+                      groupvars = c("pathlength", "PrimeFirstResp_ACC"))
+net_rmisc$PrimeFirstResp_ACC = as.factor(net_rmisc$PrimeFirstResp_ACC)
+net_rmisc$pathlength = as.factor(net_rmisc$pathlength)
+net_rmisc$pathlengthfac = ordered(as.factor(as.character(net_rmisc$pathlength)), 
+                            levels = c("PL1", "PL3", "PL6", "PL15"))
+library(ggplot2)
+library(ggthemes)
+net_rmisc %>% mutate(`Prime Retrieval` = factor(PrimeFirstResp_ACC, 
+                                        levels = unique(PrimeFirstResp_ACC),
+                    labels = c("Not Retrieved", "Retrieved")))%>%
+ggplot(aes(x = pathlengthfac, 
+           y = TargetAccuracy, 
+           fill = `Prime Retrieval`, group = `Prime Retrieval`))+
+ geom_bar(stat = "identity", position = "dodge", 
+          width = 0.5)+
+  geom_errorbar(aes(ymin = TargetAccuracy - se, 
+                    ymax = TargetAccuracy + se),
+                width=.2, position=position_dodge(.5)) +
+  theme_few()+
+  scale_fill_wsj()+
+  xlab("Path Length") + ylab("Mean Target Accuracy") + 
+  ggtitle("Target Accuracy by Path Length & Prime Accuracy") +
+    theme(axis.text = element_text(face = "bold", size = rel(1.2)),
+          axis.title = element_text(face = "bold", size = rel(1.2)),
+          legend.title = element_text(face = "bold", size = rel(1.2)),
+          plot.title = element_text( size = rel(1), hjust = .5))
+
+@
+
+\section {AOV}
+
+\subsection {Target Accuracy}
+
+<<>>=
+net_targetacc$Subject = as.factor(net_targetacc$Subject)
+net_targetacc$pathlength = as.factor(net_targetacc$pathlength)
+targetacc_aov = aov(data = net_targetacc, TargetAccuracy ~ pathlength + 
+                      Error(Subject/pathlength))
+summary(targetacc_aov)
+@
+
+\subsection {Prime Accuracy}
+
+<<>>=
+net_primeacc$Subject = as.factor(net_primeacc$Subject)
+net_primeacc$pathlength = as.factor(net_primeacc$pathlength)
+primeacc_aov = aov(data = net_primeacc, PrimeFirstResp_ACC ~ pathlength + 
+                      Error(Subject/pathlength))
+summary(primeacc_aov)
+@
+
+\subsection {Effect of Retrieval}
+<<>>=
+
+net_subject$pathlength = as.factor(net_subject$pathlength)
+net_subject$Subject = as.factor(net_subject$Subject)
+net_subject$PrimeFirstResp_ACC = as.factor(net_subject$PrimeFirstResp_ACC)
+
+## AOV
+retrieval_aov = aov(data = net_subject, 
+                    TargetAccuracy ~ PrimeFirstResp_ACC*pathlength + 
+                      Error(Subject/(PrimeFirstResp_ACC*pathlength)))
+summary(retrieval_aov)
+
+## LMER
+
+net$pathlength = as.factor(net$pathlength)
+net$Subject = as.factor(net$Subject)
+net$PrimeFirstResp_ACC = as.factor(net$PrimeFirstResp_ACC)
+
+library(optimx)
+library(lme4)
+retrieval_model = glmer(data = net, 
+                        TargetAccuracy ~ pathlength*PrimeFirstResp_ACC +
+                        (1|Subject) + (1|Stimuli1), family = "binomial",
+                        control = glmerControl(optimizer = "optimx", 
+                                              calc.derivs = FALSE,
+     optCtrl = list(method = "nlminb", starttests = FALSE, kkt = FALSE)))
+summary(retrieval_model)
+car::Anova(retrieval_model)
+@
+
+\section {Demasking RTs}
+
+<<>>=
+library(dplyr)
+
+net_firsttrim_target = subset(net, 
+                                 net$RTrecogniseTarget > 250 &
+                                net$RTrecogniseTarget < 7000)
+
+net_firsttrim_prime = subset(net, 
+                                 net$RTrecognisePrime > 250 &
+                                net$RTrecognisePrime < 7000)
+
+net_firsttrim_targetdef = subset(net, 
+                                 net$TargetDefRT > 250 &
+                                net$TargetDefRT < 9000)
+@
+
+\subsection*{RTRecogniseprime}
+
+<<>>=
+## FOR PRIME
+## aggregate per subject all IVs and DVs
+meanRT = group_by(net_firsttrim_prime, Subject) %>%
+  summarise_at(vars(RTrecognisePrime), mean)
+colnames(meanRT) = c("Subject", 
+                     "MeanRTrecogPrime")
+
+sdRT = group_by(net_firsttrim_prime, Subject) %>%
+  summarise_at(vars(RTrecognisePrime), sd)
+colnames(sdRT) = c("Subject",
+                     "sdRTrecogPrime")
+
+RT_agg = merge(meanRT, sdRT, by = "Subject")
+
+## merge aggregate info with long data
+net_z_prime = merge(net_firsttrim_prime, 
+                             RT_agg, by = "Subject", all.x = T)
+
+## person and grand-mean centered scores using original and aggregate
+library(dplyr)
+net_z_prime = net_z_prime %>% mutate(zPrimeRecogRT = 
+                                             (RTrecognisePrime - 
+                                                MeanRTrecogPrime)/sdRTrecogPrime)
+                 
+## checking: subject level means should be zero
+
+sub_pic = group_by(net_z_prime, Subject) %>%
+  summarise_at(vars(zPrimeRecogRT), mean)
+@
+
+\subsection*{RTRecogniseTarget}
+<<>>=
+## FOR TARGET
+## aggregate per subject all IVs and DVs
+meanRT = group_by(net_firsttrim_target, Subject) %>%
+  summarise_at(vars(RTrecogniseTarget), mean)
+colnames(meanRT) = c("Subject", "MeanRTrecogTarget")
+
+sdRT = group_by(net_firsttrim_target, Subject) %>%
+  summarise_at(vars(RTrecogniseTarget), sd)
+colnames(sdRT) = c("Subject", "sdRTrecogTarget")
+
+RT_agg = merge(meanRT, sdRT, by = "Subject")
+
+## merge aggregate info with long data
+net_z_target= merge(net_firsttrim_target,
+                             RT_agg, by = "Subject", all.x = T)
+
+## person and grand-mean centered scores using original and aggregate
+library(dplyr)
+net_z_target = net_z_target %>% mutate( zTargetRecogRT = 
+                                             (RTrecogniseTarget - 
+                                                MeanRTrecogTarget)/sdRTrecogTarget)
+                 
+## checking: subject level means should be zero
+
+sub_pic = group_by(net_z_target, Subject) %>%
+  summarise_at(vars(zTargetRecogRT), mean)
+
+@
+
+
+\section {Trimming z-RTs}
+
+<<>>=
+net_z_trimmed_prime = subset(net_z_prime, 
+                                net_z_prime$zPrimeRecogRT < 3 & 
+                                  net_z_prime$zPrimeRecogRT > -3)
+
+net_z_trimmed_target = subset(net_z_target, 
+                                net_z_target$zTargetRecogRT < 3 & 
+                                  net_z_target$zTargetRecogRT > -3)
+
+@
+
+\section {Repeating z-scoring}
+
+\subsection{For prime}
+
+<<>>=
+## aggregate per subject all IVs and DVs
+meanRT_prime = group_by(net_z_trimmed_prime, Subject) %>%
+  summarise_at(vars(RTrecognisePrime), mean)
+colnames(meanRT_prime) = c("Subject", 
+                     "MeanRTrecogPrime_trim")
+
+sdRT_prime = group_by(net_z_trimmed_prime, Subject) %>%
+  summarise_at(vars(RTrecognisePrime), sd)
+colnames(sdRT_prime) = c("Subject",
+                     "sdRTrecogPrime_trim")
+
+RT_agg_prime = merge(meanRT_prime, sdRT_prime, by = "Subject")
+
+## merge aggregate info with long data
+net_final_z_prime = merge(net_z_trimmed_prime, 
+                             RT_agg_prime, by = "Subject", all.x = T)
+
+## person and grand-mean centered scores using original and aggregate
+library(dplyr)
+net_final_z_prime = net_final_z_prime %>% 
+                                  mutate( zPrimeRecogRT_trim = 
+                                             (RTrecognisePrime - 
+                                      MeanRTrecogPrime_trim)/sdRTrecogPrime_trim)
+                 
+## checking: subject level means should be zero
+
+sub_pic = group_by(net_final_z_prime, Subject) %>%
+  summarise_at(vars(zPrimeRecogRT_trim), mean)
+
+@
+
+\subsection{For Target}
+
+<<>>=
+## aggregate per subject all IVs and DVs
+meanRT_target = group_by(net_z_trimmed_target, Subject) %>%
+  summarise_at(vars(RTrecogniseTarget), mean)
+colnames(meanRT_target) = c("Subject", 
+                     "MeanRTrecogTarget_trim")
+
+sdRT_target = group_by(net_z_trimmed_target, Subject) %>%
+  summarise_at(vars(RTrecogniseTarget), sd)
+colnames(sdRT_target) = c("Subject", 
+                      "sdRTrecogTarget_trim")
+
+RT_agg_target = merge(meanRT_target, sdRT_target, by = "Subject")
+
+## merge aggregate info with long data
+net_final_z_target = merge(net_z_trimmed_target, 
+                             RT_agg_target, by = "Subject", all.x = T)
+
+## person and grand-mean centered scores using original and aggregate
+library(dplyr)
+net_final_z_target = net_final_z_target %>% 
+                                  mutate( zTargetRecogRT_trim = 
+                                             (RTrecogniseTarget - 
+                                      MeanRTrecogTarget_trim)/sdRTrecogTarget_trim)
+                 
+## checking: subject level means should be zero
+
+sub_pic = group_by(net_final_z_target, Subject) %>%
+  summarise_at(vars(zTargetRecogRT_trim), mean)
+
+@
+
+
+
+\subsection {Combining z-RT Prime and Target }
+
+<<>>=
+## now we have separately z-scored RTprime and RTtarget. Need to combine.
+## taking only necessary columns
+net_final_z_prime2 = net_final_z_prime[,c(1,4,34)]
+
+net_final_z = merge(net_final_z_target, 
+                             net_final_z_prime2, 
+                             by  = c("Subject", "Trial"))
+
+@
+\section {Linear Models}
+
+<<>>=
+# Mean RT to retrieve Target as a function of Prime Condition
+
+# Effect of RT prime on Accuracy
+library(lme4)
+library(lmerTest)
+RTprime_acc_model = glmer(data = net_final_z, 
+                          TargetAccuracy ~ zPrimeRecogRT_trim*pathlength + 
+                            (1|Subject) + (1|Stimuli1), family = binomial )
+summary(RTprime_acc_model)
+car::Anova(RTprime_acc_model)
+options(contrasts = c("contr.sum","contr.poly"))
+anova(RTprime_acc_model)
+
+RTprime_RT_model = lmer(data = net_final_z, 
+                  zTargetRecogRT_trim ~ zPrimeRecogRT_trim*pathlength + 
+                            (1|Subject) + (1|Stimuli1) )
+summary(RTprime_RT_model)
+car::Anova(RTprime_RT_model)
+options(contrasts = c("contr.sum","contr.poly"))
+anova(RTprime_RT_model)
+
+@
+
+\subsection {Acc Figure}
+<<fig=TRUE>>=
+net_final_z %>%
+  ggplot(aes(x = zPrimeRecogRT_trim, y = TargetAccuracy, 
+             group = pathlength, color = pathlength)) +
+  geom_smooth(method = "glm", se = FALSE, method.args = list(family = "binomial"))+
+  facet_wrap(~pathlength)+
+    xlab("z-RT to Demask Prime") + ylab ("Mean Target Accuracy")+ 
+  ggtitle("Target Accuracy as a Function of \n RT to Demask Prime & Path Length")+
+theme_hc() +
+  theme(axis.text = element_text(face = "bold", size = rel(1.2)),
+          axis.title = element_text(face = "bold", size = rel(1.2)),
+    strip.text.x = element_text(face = "bold", size = rel(1.4)),
+    plot.title = element_text(face = "bold", size = rel(1.2), hjust = .5))
+@
+
+\subsection {RT Figure}
+<<fig=TRUE>>=
+net_final_z %>%
+  ggplot(aes(x = zPrimeRecogRT_trim, y = zTargetRecogRT_trim, 
+             group = pathlength, color = pathlength)) +
+  geom_smooth(method = "lm", se = FALSE)+
+    xlab("z-RT to Demask Prime") + ylab ("Mean Target Accuracy")+ 
+  ggtitle("Target Accuracy as a Function of \n RT to Demask Prime & Path Length")+
+theme_hc() +
+  theme(axis.text = element_text(face = "bold", size = rel(1.2)),
+          axis.title = element_text(face = "bold", size = rel(1.2)),
+    strip.text.x = element_text(face = "bold", size = rel(1.4)),
+    plot.title = element_text(face = "bold", size = rel(1.2), hjust = .5))
+@
+
+\section {Undirected Network}
+
+<<fig=TRUE>>=
+undirected_subject = group_by(net, Subject, 
+                              Undirected, PrimeFirstResp_ACC) %>%
+  summarize_at(vars(TargetAccuracy), mean)
+undirected_rmisc = Rmisc::summarySE(net, 
+                      measurevar = "TargetAccuracy",
+                      groupvars = c("Undirected", "PrimeFirstResp_ACC"))
+
+undirected_rmisc$PrimeFirstResp_ACC = as.factor(undirected_rmisc$PrimeFirstResp_ACC)
+undirected_rmisc$Undirected = as.factor(undirected_rmisc$Undirected)
+
+undirected_rmisc = undirected_rmisc %>% filter(!is.na(undirected_rmisc$Undirected))
+                        
+library(ggplot2)
+library(ggthemes)
+undirected_rmisc %>% mutate(`Prime Retrieval` = factor(PrimeFirstResp_ACC, 
+                                        levels = unique(PrimeFirstResp_ACC),
+                    labels = c("Not Retrieved", "Retrieved")))%>%
+ggplot(aes(x = Undirected, 
+           y = TargetAccuracy, 
+           fill = `Prime Retrieval`, group = `Prime Retrieval`))+
+ geom_bar(stat = "identity", position = "dodge", 
+          width = 0.5)+
+  geom_errorbar(aes(ymin = TargetAccuracy - se, 
+                    ymax = TargetAccuracy + se),
+                width=.2, position=position_dodge(.5)) +
+  theme_few()+
+  scale_fill_wsj()+
+  xlab("Path Length") + ylab("Mean Target Accuracy") + 
+  ggtitle("Target Accuracy by Path Length & Prime Accuracy") +
+    theme(axis.text = element_text(face = "bold", size = rel(1.2)),
+          axis.title = element_text(face = "bold", size = rel(1.2)),
+          legend.title = element_text(face = "bold", size = rel(1.2)),
+          plot.title = element_text( size = rel(1), hjust = .5))
+
+@
+
+\subsection*{Undirected Model}
+
+<<>>=
+net$undirectedfac = as.factor(net$Undirected)
+retrieval_model_undirected = glmer(data = net, 
+                        TargetAccuracy ~ undirectedfac*PrimeFirstResp_ACC +
+                        (1|Subject) + (1|Stimuli1), family = "binomial",
+                        control = glmerControl(optimizer = "optimx", 
+                                              calc.derivs = FALSE,
+     optCtrl = list(method = "nlminb", starttests = FALSE, kkt = FALSE)))
+summary(retrieval_model_undirected)
+car::Anova(retrieval_model_undirected)
+options(contrasts = c("contr.sum","contr.poly"))
+anova(retrieval_model_undirected)
+
+
+RTprime_acc_model_undirected = glmer(data = net_final_z, 
+                          TargetAccuracy ~ zPrimeRecogRT_trim*undirectedfac + 
+                            (1|Subject) + (1|Stimuli1), family = binomial )
+summary(RTprime_acc_model_undirected)
+car::Anova(RTprime_acc_model_undirected)
+options(contrasts = c("contr.sum","contr.poly"))
+anova(RTprime_acc_model_undirected)
+
+RTprime_RT_model_undirected = lmer(data = net_final_z, 
+                  zTargetRecogRT_trim ~ zPrimeRecogRT_trim*Undirected + 
+                            (1|Subject) + (1|Stimuli1) )
+summary(RTprime_RT_model_undirected)
+car::Anova(RTprime_RT_model_undirected)
+options(contrasts = c("contr.sum","contr.poly"))
+anova(RTprime_RT_model_undirected)
+@
+
+\section {Directed Network}
+
+<<fig=TRUE>>=
+net$newdirected = ifelse(net$Directed == "Inf" | 
+                              net$Directed == "NA", NA,
+                              net$Directed)
+directed_rmisc = Rmisc::summarySE(net, 
+                      measurevar = "TargetAccuracy",
+                      groupvars = c("newdirected", "PrimeFirstResp_ACC"))
+
+directed_rmisc = directed_rmisc %>% filter(!is.na(newdirected))
+
+directed_rmisc$PrimeFirstResp_ACC = as.factor(directed_rmisc$PrimeFirstResp_ACC)
+directed_rmisc$newdirected = as.factor(directed_rmisc$newdirected)
+
+
+library(ggplot2)
+library(ggthemes)
+directed_rmisc %>% mutate(`Prime Retrieval` = factor(PrimeFirstResp_ACC, 
+                                        levels = unique(PrimeFirstResp_ACC),
+                    labels = c("Not Retrieved", "Retrieved")))%>%
+ggplot(aes(x = newdirected, 
+           y = TargetAccuracy, 
+           fill = `Prime Retrieval`, group = `Prime Retrieval`))+
+ geom_bar(stat = "identity", position = "dodge", 
+          width = 0.5)+
+  geom_errorbar(aes(ymin = TargetAccuracy - se, 
+                    ymax = TargetAccuracy + se),
+                width=.2, position=position_dodge(.5)) +
+  theme_few()+
+  scale_fill_wsj()+
+  xlab("Directed Path Length") + ylab("Mean Target Accuracy") + 
+  ggtitle("Target Accuracy by Path Length & Prime Accuracy") +
+    theme(axis.text = element_text(face = "bold", size = rel(1.2)),
+          axis.title = element_text(face = "bold", size = rel(1.2)),
+          legend.title = element_text(face = "bold", size = rel(1.2)),
+          plot.title = element_text( size = rel(1), hjust = .5))
+
+@
+
+\subsection*{Directed Model}
+
+<<>>=
+retrieval_model_directed = glmer(data = net, 
+                        TargetAccuracy ~ newdirected*PrimeFirstResp_ACC +
+                        (1|Subject) + (1|Stimuli1), family = "binomial",
+                        control = glmerControl(optimizer = "optimx", 
+                                              calc.derivs = FALSE,
+     optCtrl = list(method = "nlminb", starttests = FALSE, kkt = FALSE)))
+summary(retrieval_model_directed)
+car::Anova(retrieval_model_directed)
+options(contrasts = c("contr.sum","contr.poly"))
+anova(retrieval_model_directed)
+
+net_final_z$newdirected = ifelse(net_final_z$Directed == "Inf" | 
+                              net_final_z$Directed == "NA", NA,
+                              net_final_z$Directed)
+
+RTprime_acc_model_directed = glmer(data = net_final_z, 
+                          TargetAccuracy ~ zPrimeRecogRT_trim*newdirected + 
+                            (1|Subject) + (1|Stimuli1), family = binomial )
+summary(RTprime_acc_model_directed)
+car::Anova(RTprime_acc_model_directed)
+options(contrasts = c("contr.sum","contr.poly"))
+anova(RTprime_acc_model_directed)
+
+RTprime_RT_model_directed = lmer(data = net_final_z, 
+                  zTargetRecogRT_trim ~ zPrimeRecogRT_trim*newdirected + 
+                            (1|Subject) + (1|Stimuli1) )
+summary(RTprime_RT_model_directed)
+car::Anova(RTprime_RT_model_directed)
+options(contrasts = c("contr.sum","contr.poly"))
+anova(RTprime_RT_model)
+@
+\end{document}
