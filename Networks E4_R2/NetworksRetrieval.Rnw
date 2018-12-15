@@ -495,6 +495,7 @@ car::Anova(retrieval_model_undirected)
 options(contrasts = c("contr.sum","contr.poly"))
 anova(retrieval_model_undirected)
 
+net_final_z$undirectedfac = as.factor(net_final_z$Undirected)
 
 RTprime_acc_model_undirected = glmer(data = net_final_z, 
                           TargetAccuracy ~ zPrimeRecogRT_trim*undirectedfac + 
@@ -505,7 +506,7 @@ options(contrasts = c("contr.sum","contr.poly"))
 anova(RTprime_acc_model_undirected)
 
 RTprime_RT_model_undirected = lmer(data = net_final_z, 
-                  zTargetRecogRT_trim ~ zPrimeRecogRT_trim*Undirected + 
+                  zTargetRecogRT_trim ~ zPrimeRecogRT_trim*undirectedfac + 
                             (1|Subject) + (1|Stimuli1) )
 summary(RTprime_RT_model_undirected)
 car::Anova(RTprime_RT_model_undirected)
